@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEditor;
@@ -9,14 +10,11 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// Read-only diagnostic tool for VideoTXL playlist wiring.
-/// It does NOT modify the scene or any VideoTXL objects.
+/// Read-only VideoTXL 2.5.x playlist diagnostic tool.
+/// It never changes scene objects or package files.
 ///
-/// Menu:
-/// Nova -> VideoTXL -> Analyze Playlist Wiring
-///
-/// Output:
-/// Assets/NovaSceneReports/TXL_Playlist_Diagnostic_*.txt
+/// Menu: Nova -> VideoTXL -> Analyze Playlist Wiring
+/// Output: Assets/NovaSceneReports/TXL_Playlist_Diagnostic_*.txt
 /// </summary>
 public static class NovaTXLPlaylistAnalyzer
 {
@@ -33,51 +31,205 @@ public static class NovaTXLPlaylistAnalyzer
         }
 
         Directory.CreateDirectory(OutputFolder);
-
         StringBuilder sb = new StringBuilder(64 * 1024);
-        AppendHeader(sb, scene);
-        AppendVideoTXLPackageInfo(sb);
 
-        GameObject[] roots = scene.GetRootGameObjects();
-
-        AppendSection(sb, "1. VIDEO TXL SOURCE MANAGERS");
-        ScanComponentsByTypeName(sb, roots, "Texel.SourceManager", true);
-
-        AppendSection(sb, "2. VIDEO TXL PLAYLISTS");
-        ScanComponentsByTypeName(sb, roots, "Texel.Playlist", true);
-
-        AppendSection(sb, "3. VIDEO TXL PLAYLIST LOAD DATA");
-        ScanComponentsByTypeName(sb, roots, "Texel.PlaylistLoadData", true);
-
-        AppendSection(sb, "4. PLAYLIST DATA ASSETS REFERENCED IN SCENE");
-        ScanReferencedPlaylistData(sb, roots);
-
-        AppendSection(sb, "5. UNITY BUTTON ONCLICK WIRING");
-        ScanButtons(sb, roots);
-
-        AppendSection(sb, "6. LIKELY TABLET / PLAYLIST UI RAYCAST BLOCKERS");
-        ScanInterestingGraphics(sb, roots);
-
-        AppendSection(sb, "7. CANVAS GROUPS IN TABLET / PLAYLIST UI");
-        ScanInterestingCanvasGroups(sb, roots);
-
-        AppendSection(sb, "8. GRAPHIC RAYCASTERS IN TABLET / PLAYLIST UI");
-        ScanInterestingGraphicRaycasters(sb, roots);
-
-        AppendSection(sb, "9. QUICK INTERPRETATION NOTES");
-        sb.AppendLine("- This report is read-only evidence. It does not prove runtime VRChat behaviour by itself.");
-        sb.AppendLine("- For a dead custom playlist button, compare its Button OnClick target with the PlaylistLoadData entry and Playlist reference.");
-        sb.AppendLine("- For playlists leaking into the public VideoTXL UI, inspect SourceManager sources and the generated Video Source UI behaviour.");
-        sb.AppendLine("- A Graphic with Raycast Target = true can intercept pointer input if it is visually above the intended button.");
-        sb.AppendLine("- A CanvasGroup with Blocks Raycasts = true and Interactable = false can also explain an apparently unclickable area.");
+        sb.AppendLine("NOVA VIDEOTXL PLAYLIST DIAGNOSTIC");
+        sb.AppendLine("=================================");
+        sb.AppendLine("Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        sb.AppendLine("Scene: " + scene.name);
+        sb.AppendLine("Scene path: " + scene.path);
+        sb.AppendLine("Unity: " + Application.unityVersion);
+        sb.AppendLine();
+        sb.AppendLine("READ ONLY: this tool does not change the scene.");
         sb.AppendLine();
 
-        string sceneName = MakeSafeFileName(scene.name);
-        string timestamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-        string assetPath = OutputFolder + "/TXL_Playlist_Diagnostic_" + sceneName + "_" + timestamp + ".txt";
-        File.WriteAllText(assetPath, sb.ToString(), Encoding.UTF8);
+        AppendPackageInfo(sb);
 
+        List<Component> all = GetAllComponents(scene);
+        List<Component> sourceManagers = FindByType(all, "Texel.SourceManager");
+        List<Component> playlists = FindByType(all, "Texel.Playlist");
+        List<Component> loadButtons = FindByType(all, "Texel.PlaylistLoadData");
+        List<Component> videoSourceUis = FindByType(all, "Texel.VideoSourceUI");
+
+        Section(sb, "1. SOURCE MANAGERS AND SOURCES");
+        if (sourceManagers.Count == 0) sb.AppendLine("NONE FOUND\n");
+        foreach (Component manager in sourceManagers)
+        {
+            sb.AppendLine("SourceManager: " + PathOf(manager.gameObject));
+            SerializedObject so = new SerializedObject(manager);
+            SerializedProperty sources = so.FindProperty("sources");
+            if (sources == null || !sources.isArray)
+            {
+                sb.AppendLine("  sources: <not found>");
+                sb.AppendLine();
+                continue;
+            }
+
+            sb.AppendLine("  Source count: " + sources.arraySize);
+            for (int i = 0; i < sources.arraySize; i++)
+            {
+                UnityEngine.Object source = sources.GetArrayElementAtIndex(i).objectReferenceValue;
+                sb.AppendLine("  [" + i + "] " + Describe(source));
+                if (source != null)
+                {
+                    SerializedObject sourceSo = new SerializedObject(source);
+                    string sourceName = GetString(sourceSo, "sourceName");
+                    bool sourceEnabled = GetBool(sourceSo, "sourceEnabled", true);
+                    UnityEngine.Object data = GetObject(sourceSo, "playlistData");
+                    UnityEngine.Object catalog = GetObject(sourceSo, "playlistCatalog");
+                    sb.AppendLine("       sourceName: " + (string.IsNullOrEmpty(sourceName) ? "<empty/default>" : sourceName));
+                    sb.AppendLine("       sourceEnabled (serialized default): " + sourceEnabled);
+                    if (data != null) sb.AppendLine("       playlistData: " + Describe(data));
+                    if (catalog != null) sb.AppendLine("       playlistCatalog: " + Describe(catalog));
+                }
+            }
+            sb.AppendLine();
+        }
+
+        Section(sb, "2. PLAYLISTS");
+        if (playlists.Count == 0) sb.AppendLine("NONE FOUND\n");
+        foreach (Component playlist in playlists)
+        {
+            SerializedObject so = new SerializedObject(playlist);
+            UnityEngine.Object data = GetObject(so, "playlistData");
+            UnityEngine.Object catalog = GetObject(so, "playlistCatalog");
+            UnityEngine.Object queue = GetObject(so, "queue");
+
+            sb.AppendLine("Playlist: " + PathOf(playlist.gameObject));
+            sb.AppendLine("  Source Name: " + EmptyAsDefault(GetString(so, "sourceName")));
+            sb.AppendLine("  Source Enabled (serialized default): " + GetBool(so, "sourceEnabled", true));
+            sb.AppendLine("  Playlist Data: " + Describe(data));
+            sb.AppendLine("  Playlist Catalog: " + Describe(catalog));
+            sb.AppendLine("  Queue: " + Describe(queue));
+            sb.AppendLine("  Immediate: " + GetBool(so, "immediate", false));
+            sb.AppendLine("  Auto Advance: " + GetBool(so, "autoAdvance", true));
+            sb.AppendLine("  Track Catalog Mode: " + GetBool(so, "trackCatalogMode", false));
+            sb.AppendLine();
+        }
+
+        Section(sb, "3. CUSTOM PLAYLIST LOAD BUTTONS - IMPORTANT");
+        sb.AppendLine("VideoTXL 2.5.1 PlaylistLoadData._Load() behaves like this:");
+        sb.AppendLine("  Playlist has PlaylistCatalog -> load through catalog");
+        sb.AppendLine("  Playlist has NO PlaylistCatalog -> load PlaylistData directly");
+        sb.AppendLine();
+        sb.AppendLine("If a Playlist has a catalog but the button's PlaylistData is NOT inside that catalog,");
+        sb.AppendLine("VideoTXL 2.5.1 resolves catalog index -1 and loads an empty/null playlist.");
+        sb.AppendLine("That can look exactly like a button that stopped working after the update.");
+        sb.AppendLine();
+
+        if (loadButtons.Count == 0) sb.AppendLine("NONE FOUND\n");
+        foreach (Component loader in loadButtons)
+        {
+            SerializedObject so = new SerializedObject(loader);
+            UnityEngine.Object playlistObj = GetObject(so, "playlist");
+            UnityEngine.Object dataObj = GetObject(so, "playlistData");
+
+            sb.AppendLine("PlaylistLoadData: " + PathOf(loader.gameObject));
+            sb.AppendLine("  Playlist: " + Describe(playlistObj));
+            sb.AppendLine("  Playlist Data: " + Describe(dataObj));
+
+            if (playlistObj == null)
+            {
+                sb.AppendLine("  RESULT: ERROR - Playlist reference is null.");
+                sb.AppendLine();
+                continue;
+            }
+
+            SerializedObject playlistSo = new SerializedObject(playlistObj);
+            UnityEngine.Object catalogObj = GetObject(playlistSo, "playlistCatalog");
+            sb.AppendLine("  Target Playlist Catalog: " + Describe(catalogObj));
+
+            if (catalogObj == null)
+            {
+                sb.AppendLine("  ROUTE: direct _LoadData(playlistData)");
+                sb.AppendLine("  RESULT: no catalog-membership problem detected.");
+            }
+            else
+            {
+                int catalogIndex = FindObjectInArray(catalogObj, "playlists", dataObj);
+                sb.AppendLine("  ROUTE: _LoadFromCatalogueData(playlistData)");
+                sb.AppendLine("  Catalog index for this Playlist Data: " + catalogIndex);
+
+                if (dataObj == null)
+                {
+                    sb.AppendLine("  RESULT: ERROR - Playlist Data is null.");
+                }
+                else if (catalogIndex < 0)
+                {
+                    sb.AppendLine("  RESULT: *** LIKELY BROKEN IN VIDEOTXL 2.5.1 ***");
+                    sb.AppendLine("  REASON: Playlist has a catalog, but this Playlist Data is not in that catalog.");
+                    sb.AppendLine("  _Load() will use the catalog route, resolve -1, then load no Playlist Data.");
+                }
+                else
+                {
+                    sb.AppendLine("  RESULT: catalog membership is valid.");
+                }
+            }
+            sb.AppendLine();
+        }
+
+        Section(sb, "4. VIDEOSOURCE UI - WHY SOURCE BUTTONS APPEAR");
+        sb.AppendLine("VideoTXL 2.5.x VideoSourceUI builds source selector buttons at runtime from SourceManager sources.");
+        sb.AppendLine("Enabled compatible sources can therefore become visible in the stock player UI.");
+        sb.AppendLine();
+
+        if (videoSourceUis.Count == 0) sb.AppendLine("NONE FOUND\n");
+        foreach (Component ui in videoSourceUis)
+        {
+            SerializedObject so = new SerializedObject(ui);
+            UnityEngine.Object managerObj = GetObject(so, "sourceManager");
+            UnityEngine.Object buttonRoot = GetObject(so, "buttonRoot");
+            UnityEngine.Object contentRoot = GetObject(so, "contentRoot");
+            UnityEngine.Object templateRoot = GetObject(so, "templateRoot");
+
+            sb.AppendLine("VideoSourceUI: " + PathOf(ui.gameObject));
+            sb.AppendLine("  Source Manager: " + Describe(managerObj));
+            sb.AppendLine("  Button Root: " + Describe(buttonRoot));
+            sb.AppendLine("  Content Root: " + Describe(contentRoot));
+            sb.AppendLine("  Template Root: " + Describe(templateRoot));
+
+            if (managerObj != null)
+            {
+                SerializedObject managerSo = new SerializedObject(managerObj);
+                SerializedProperty sources = managerSo.FindProperty("sources");
+                if (sources != null && sources.isArray)
+                {
+                    sb.AppendLine("  Sources potentially represented by the stock UI:");
+                    for (int i = 0; i < sources.arraySize; i++)
+                    {
+                        UnityEngine.Object source = sources.GetArrayElementAtIndex(i).objectReferenceValue;
+                        if (source == null) continue;
+                        SerializedObject sourceSo = new SerializedObject(source);
+                        string sourceName = GetString(sourceSo, "sourceName");
+                        bool enabled = GetBool(sourceSo, "sourceEnabled", true);
+                        sb.AppendLine("    [" + i + "] " + (string.IsNullOrEmpty(sourceName) ? source.name : sourceName) + " | serialized enabled=" + enabled + " | " + Describe(source));
+                    }
+                }
+            }
+            sb.AppendLine();
+        }
+
+        Section(sb, "5. UNITY BUTTON ONCLICK WIRING");
+        ScanButtons(sb, scene);
+
+        Section(sb, "6. SIMPLE UI INPUT CHECKS");
+        ScanCanvasGroups(sb, scene);
+
+        Section(sb, "7. SUMMARY FOR NOVA");
+        sb.AppendLine("Look first for any line containing:");
+        sb.AppendLine("  *** LIKELY BROKEN IN VIDEOTXL 2.5.1 ***");
+        sb.AppendLine();
+        sb.AppendLine("If those lines exist, the custom PlaylistLoadData buttons have a concrete catalog mismatch.");
+        sb.AppendLine("If no mismatch is found, inspect the OnClick section and CanvasGroup section next.");
+        sb.AppendLine("The stock VideoSourceUI source-name leak is a separate issue from the custom load-button issue.");
+        sb.AppendLine();
+
+        string safeScene = MakeSafeFileName(scene.name);
+        string stamp = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        string assetPath = OutputFolder + "/TXL_Playlist_Diagnostic_" + safeScene + "_" + stamp + ".txt";
+        File.WriteAllText(assetPath, sb.ToString(), Encoding.UTF8);
         AssetDatabase.Refresh();
+
         TextAsset report = AssetDatabase.LoadAssetAtPath<TextAsset>(assetPath);
         if (report != null)
         {
@@ -85,437 +237,196 @@ public static class NovaTXLPlaylistAnalyzer
             EditorGUIUtility.PingObject(report);
         }
 
-        Debug.Log("[Nova VideoTXL Analyzer] Created report: " + assetPath);
-        EditorUtility.DisplayDialog(
-            "Nova VideoTXL Analyzer",
-            "Done.\n\nCreated:\n" + assetPath + "\n\nSend this TXT file to Nova.",
-            "OK"
-        );
+        Debug.Log("[Nova VideoTXL Analyzer] Created: " + assetPath);
+        EditorUtility.DisplayDialog("Nova VideoTXL Analyzer", "Done.\n\nCreated:\n" + assetPath + "\n\nSend this TXT file to Nova.", "OK");
     }
 
-    private static void AppendHeader(StringBuilder sb, Scene scene)
+    private static void AppendPackageInfo(StringBuilder sb)
     {
-        sb.AppendLine("NOVA VIDEO TXL PLAYLIST DIAGNOSTIC");
-        sb.AppendLine("==================================");
-        sb.AppendLine("Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-        sb.AppendLine("Unity: " + Application.unityVersion);
-        sb.AppendLine("Scene: " + scene.name);
-        sb.AppendLine("Scene path: " + scene.path);
-        sb.AppendLine();
-        sb.AppendLine("PURPOSE");
-        sb.AppendLine("-------");
-        sb.AppendLine("Find the exact wiring around VideoTXL SourceManager, Playlist, PlaylistLoadData,");
-        sb.AppendLine("custom Unity Buttons and possible UI raycast blockers after a VideoTXL update.");
-        sb.AppendLine("This analyzer only READS the scene.");
-        sb.AppendLine();
-    }
-
-    private static void AppendVideoTXLPackageInfo(StringBuilder sb)
-    {
-        AppendSection(sb, "VIDEO TXL PACKAGE INFO");
+        Section(sb, "VIDEOTXL PACKAGE");
         try
         {
             PackageInfo[] packages = PackageInfo.GetAllRegisteredPackages();
             bool found = false;
-            foreach (PackageInfo package in packages)
+            foreach (PackageInfo p in packages)
             {
-                if (package == null) continue;
-
-                string name = package.name ?? "";
-                string display = package.displayName ?? "";
-                if (name.IndexOf("texelsaur.video", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    display.IndexOf("VideoTXL", StringComparison.OrdinalIgnoreCase) >= 0)
+                if (p == null) continue;
+                if ((p.name ?? "").IndexOf("texelsaur.video", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    (p.displayName ?? "").IndexOf("VideoTXL", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     found = true;
-                    sb.AppendLine("Name: " + package.name);
-                    sb.AppendLine("Display name: " + package.displayName);
-                    sb.AppendLine("Version: " + package.version);
-                    sb.AppendLine("Source: " + package.source);
-                    sb.AppendLine("Resolved path: " + package.resolvedPath);
+                    sb.AppendLine("Name: " + p.name);
+                    sb.AppendLine("Display Name: " + p.displayName);
+                    sb.AppendLine("Version: " + p.version);
+                    sb.AppendLine("Resolved Path: " + p.resolvedPath);
                     sb.AppendLine();
                 }
             }
-
-            if (!found)
-                sb.AppendLine("VideoTXL package was not identified through Unity Package Manager.\n");
+            if (!found) sb.AppendLine("VideoTXL package not identified through Package Manager.\n");
         }
         catch (Exception ex)
         {
-            sb.AppendLine("Could not query Package Manager: " + ex.Message);
-            sb.AppendLine();
+            sb.AppendLine("Package query failed: " + ex.Message + "\n");
         }
     }
 
-    private static void ScanComponentsByTypeName(StringBuilder sb, GameObject[] roots, string fullTypeName, bool dumpSerialized)
+    private static void ScanButtons(StringBuilder sb, Scene scene)
     {
-        int count = 0;
-        foreach (GameObject root in roots)
-        {
-            Component[] components = root.GetComponentsInChildren<Component>(true);
-            foreach (Component component in components)
-            {
-                if (component == null) continue;
-                Type type = component.GetType();
-                if (type.FullName != fullTypeName) continue;
-
-                count++;
-                sb.AppendLine("------------------------------------------------------------");
-                sb.AppendLine("Object: " + GetHierarchyPath(component.gameObject));
-                sb.AppendLine("Component: " + type.FullName);
-                sb.AppendLine("GameObject activeSelf: " + component.gameObject.activeSelf);
-                sb.AppendLine("GameObject activeInHierarchy: " + component.gameObject.activeInHierarchy);
-                sb.AppendLine("Component enabled: " + GetEnabledState(component));
-
-                if (dumpSerialized)
-                    AppendSerializedProperties(sb, component);
-
-                sb.AppendLine();
-            }
-        }
-
-        if (count == 0)
-            sb.AppendLine("NONE FOUND\n");
-        else
-            sb.AppendLine("Total found: " + count + "\n");
-    }
-
-    private static void ScanReferencedPlaylistData(StringBuilder sb, GameObject[] roots)
-    {
-        int count = 0;
-        foreach (GameObject root in roots)
-        {
-            Component[] components = root.GetComponentsInChildren<Component>(true);
-            foreach (Component component in components)
-            {
-                if (component == null || component.GetType().FullName != "Texel.PlaylistLoadData")
-                    continue;
-
-                try
-                {
-                    SerializedObject so = new SerializedObject(component);
-                    SerializedProperty data = so.FindProperty("playlistData");
-                    if (data == null || data.objectReferenceValue == null)
-                        continue;
-
-                    count++;
-                    UnityEngine.Object obj = data.objectReferenceValue;
-                    sb.AppendLine("Load button object: " + GetHierarchyPath(component.gameObject));
-                    sb.AppendLine("PlaylistData: " + DescribeObjectReference(obj));
-                    AppendSerializedProperties(sb, obj);
-                    sb.AppendLine();
-                }
-                catch (Exception ex)
-                {
-                    sb.AppendLine("Could not inspect PlaylistData from " + GetHierarchyPath(component.gameObject) + ": " + ex.Message);
-                    sb.AppendLine();
-                }
-            }
-        }
-
-        if (count == 0)
-            sb.AppendLine("NONE FOUND\n");
-    }
-
-    private static void ScanButtons(StringBuilder sb, GameObject[] roots)
-    {
-        int totalButtons = 0;
-        int playlistRelevantButtons = 0;
-
-        foreach (GameObject root in roots)
+        int shown = 0;
+        foreach (GameObject root in scene.GetRootGameObjects())
         {
             Button[] buttons = root.GetComponentsInChildren<Button>(true);
             foreach (Button button in buttons)
             {
-                totalButtons++;
+                string path = PathOf(button.gameObject);
+                bool interesting = path.IndexOf("playlist", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                   path.IndexOf("vip", StringComparison.OrdinalIgnoreCase) >= 0;
 
-                bool interesting = IsInterestingPath(GetHierarchyPath(button.gameObject));
-                int persistentCount = button.onClick.GetPersistentEventCount();
-
-                for (int i = 0; i < persistentCount && !interesting; i++)
+                int count = button.onClick.GetPersistentEventCount();
+                for (int i = 0; i < count && !interesting; i++)
                 {
-                    UnityEngine.Object target = button.onClick.GetPersistentTarget(i);
                     string method = button.onClick.GetPersistentMethodName(i) ?? "";
-                    string targetText = target != null ? target.name + " " + target.GetType().FullName : "";
-                    if (targetText.IndexOf("Playlist", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                        method.IndexOf("Load", StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        interesting = true;
-                    }
-                }
-
-                if (!interesting)
-                    continue;
-
-                playlistRelevantButtons++;
-                sb.AppendLine("------------------------------------------------------------");
-                sb.AppendLine("Button: " + GetHierarchyPath(button.gameObject));
-                sb.AppendLine("Active self: " + button.gameObject.activeSelf);
-                sb.AppendLine("Active in hierarchy: " + button.gameObject.activeInHierarchy);
-                sb.AppendLine("Button enabled: " + button.enabled);
-                sb.AppendLine("Interactable: " + button.interactable);
-                sb.AppendLine("Target Graphic: " + (button.targetGraphic ? GetHierarchyPath(button.targetGraphic.gameObject) + " / " + button.targetGraphic.GetType().Name : "<null>"));
-                sb.AppendLine("Persistent OnClick count: " + persistentCount);
-
-                for (int i = 0; i < persistentCount; i++)
-                {
                     UnityEngine.Object target = button.onClick.GetPersistentTarget(i);
-                    string method = button.onClick.GetPersistentMethodName(i);
-                    UnityEngine.Events.UnityEventCallState state = button.onClick.GetPersistentListenerState(i);
-
-                    sb.AppendLine("  OnClick[" + i + "]:");
-                    sb.AppendLine("    State: " + state);
-                    sb.AppendLine("    Target: " + DescribeObjectReference(target));
-                    sb.AppendLine("    Method/Event: " + (string.IsNullOrEmpty(method) ? "<empty>" : method));
+                    if (method.IndexOf("Load", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        (target != null && target.name.IndexOf("Playlist", StringComparison.OrdinalIgnoreCase) >= 0))
+                        interesting = true;
                 }
 
+                if (!interesting) continue;
+                shown++;
+                sb.AppendLine("Button: " + path);
+                sb.AppendLine("  enabled: " + button.enabled);
+                sb.AppendLine("  interactable: " + button.interactable);
+                sb.AppendLine("  activeInHierarchy: " + button.gameObject.activeInHierarchy);
+                sb.AppendLine("  OnClick count: " + count);
+                for (int i = 0; i < count; i++)
+                {
+                    sb.AppendLine("    [" + i + "] state=" + button.onClick.GetPersistentListenerState(i));
+                    sb.AppendLine("        target=" + Describe(button.onClick.GetPersistentTarget(i)));
+                    sb.AppendLine("        method=" + button.onClick.GetPersistentMethodName(i));
+                }
                 sb.AppendLine();
             }
         }
-
-        sb.AppendLine("Total Unity Buttons in scene: " + totalButtons);
-        sb.AppendLine("Buttons included in this focused report: " + playlistRelevantButtons);
-        sb.AppendLine();
+        sb.AppendLine("Focused buttons reported: " + shown + "\n");
     }
 
-    private static void ScanInterestingGraphics(StringBuilder sb, GameObject[] roots)
+    private static void ScanCanvasGroups(StringBuilder sb, Scene scene)
     {
-        int count = 0;
-        foreach (GameObject root in roots)
-        {
-            Graphic[] graphics = root.GetComponentsInChildren<Graphic>(true);
-            foreach (Graphic graphic in graphics)
-            {
-                string path = GetHierarchyPath(graphic.gameObject);
-                if (!IsInterestingPath(path))
-                    continue;
-
-                // Focus on things that can actually affect pointer input.
-                if (!graphic.raycastTarget)
-                    continue;
-
-                count++;
-                sb.AppendLine("Graphic: " + path);
-                sb.AppendLine("  Type: " + graphic.GetType().FullName);
-                sb.AppendLine("  Enabled: " + graphic.enabled);
-                sb.AppendLine("  Active self: " + graphic.gameObject.activeSelf);
-                sb.AppendLine("  Active in hierarchy: " + graphic.gameObject.activeInHierarchy);
-                sb.AppendLine("  Raycast Target: " + graphic.raycastTarget);
-                sb.AppendLine("  Canvas: " + (graphic.canvas ? GetHierarchyPath(graphic.canvas.gameObject) : "<none>"));
-                sb.AppendLine();
-            }
-        }
-
-        if (count == 0)
-            sb.AppendLine("No raycast-target Graphics found in likely tablet/playlist paths.\n");
-        else
-            sb.AppendLine("Total raycast-target Graphics reported: " + count + "\n");
-    }
-
-    private static void ScanInterestingCanvasGroups(StringBuilder sb, GameObject[] roots)
-    {
-        int count = 0;
-        foreach (GameObject root in roots)
+        int shown = 0;
+        foreach (GameObject root in scene.GetRootGameObjects())
         {
             CanvasGroup[] groups = root.GetComponentsInChildren<CanvasGroup>(true);
             foreach (CanvasGroup group in groups)
             {
-                string path = GetHierarchyPath(group.gameObject);
-                if (!IsInterestingPath(path))
+                string path = PathOf(group.gameObject);
+                if (path.IndexOf("tablet", StringComparison.OrdinalIgnoreCase) < 0 &&
+                    path.IndexOf("playlist", StringComparison.OrdinalIgnoreCase) < 0 &&
+                    path.IndexOf("vip", StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
 
-                count++;
+                shown++;
                 sb.AppendLine("CanvasGroup: " + path);
-                sb.AppendLine("  Alpha: " + group.alpha);
-                sb.AppendLine("  Interactable: " + group.interactable);
-                sb.AppendLine("  Blocks Raycasts: " + group.blocksRaycasts);
-                sb.AppendLine("  Ignore Parent Groups: " + group.ignoreParentGroups);
-                sb.AppendLine("  Active in hierarchy: " + group.gameObject.activeInHierarchy);
+                sb.AppendLine("  alpha=" + group.alpha);
+                sb.AppendLine("  interactable=" + group.interactable);
+                sb.AppendLine("  blocksRaycasts=" + group.blocksRaycasts);
+                sb.AppendLine("  ignoreParentGroups=" + group.ignoreParentGroups);
+                sb.AppendLine("  activeInHierarchy=" + group.gameObject.activeInHierarchy);
                 sb.AppendLine();
             }
         }
-
-        if (count == 0)
-            sb.AppendLine("No CanvasGroups found in likely tablet/playlist paths.\n");
+        if (shown == 0) sb.AppendLine("No relevant CanvasGroups found.\n");
     }
 
-    private static void ScanInterestingGraphicRaycasters(StringBuilder sb, GameObject[] roots)
+    private static int FindObjectInArray(UnityEngine.Object holder, string propertyName, UnityEngine.Object wanted)
     {
-        int count = 0;
-        foreach (GameObject root in roots)
-        {
-            GraphicRaycaster[] raycasters = root.GetComponentsInChildren<GraphicRaycaster>(true);
-            foreach (GraphicRaycaster raycaster in raycasters)
-            {
-                string path = GetHierarchyPath(raycaster.gameObject);
-                if (!IsInterestingPath(path))
-                    continue;
-
-                count++;
-                sb.AppendLine("GraphicRaycaster: " + path);
-                sb.AppendLine("  Enabled: " + raycaster.enabled);
-                sb.AppendLine("  Ignore Reversed Graphics: " + raycaster.ignoreReversedGraphics);
-                sb.AppendLine("  Blocking Objects: " + raycaster.blockingObjects);
-                sb.AppendLine("  Blocking Mask: " + LayerMaskToString(raycaster.blockingMask));
-                sb.AppendLine();
-            }
-        }
-
-        if (count == 0)
-            sb.AppendLine("No GraphicRaycasters found in likely tablet/playlist paths.\n");
-    }
-
-    private static void AppendSerializedProperties(StringBuilder sb, UnityEngine.Object obj)
-    {
-        if (obj == null)
-        {
-            sb.AppendLine("Serialized fields: <object is null>");
-            return;
-        }
-
+        if (holder == null || wanted == null) return -1;
         try
         {
-            SerializedObject so = new SerializedObject(obj);
-            SerializedProperty iterator = so.GetIterator();
-            bool enterChildren = true;
-
-            sb.AppendLine("Serialized fields:");
-            while (iterator.NextVisible(enterChildren))
+            SerializedObject so = new SerializedObject(holder);
+            SerializedProperty array = so.FindProperty(propertyName);
+            if (array == null || !array.isArray) return -1;
+            for (int i = 0; i < array.arraySize; i++)
             {
-                enterChildren = false;
-
-                if (iterator.propertyPath == "m_Script")
-                    continue;
-
-                sb.AppendLine("  " + iterator.propertyPath + " = " + SerializedValueToString(iterator));
+                if (array.GetArrayElementAtIndex(i).objectReferenceValue == wanted)
+                    return i;
             }
         }
-        catch (Exception ex)
-        {
-            sb.AppendLine("Serialized fields: <could not inspect: " + ex.Message + ">");
-        }
+        catch { }
+        return -1;
     }
 
-    private static string SerializedValueToString(SerializedProperty property)
+    private static List<Component> GetAllComponents(Scene scene)
     {
-        try
+        List<Component> result = new List<Component>();
+        foreach (GameObject root in scene.GetRootGameObjects())
         {
-            switch (property.propertyType)
-            {
-                case SerializedPropertyType.Integer:
-                    return property.intValue.ToString();
-                case SerializedPropertyType.Boolean:
-                    return property.boolValue.ToString();
-                case SerializedPropertyType.Float:
-                    return property.floatValue.ToString("0.#####");
-                case SerializedPropertyType.String:
-                    return "\"" + property.stringValue + "\"";
-                case SerializedPropertyType.Color:
-                    return property.colorValue.ToString();
-                case SerializedPropertyType.ObjectReference:
-                    return DescribeObjectReference(property.objectReferenceValue);
-                case SerializedPropertyType.LayerMask:
-                    return property.intValue.ToString();
-                case SerializedPropertyType.Enum:
-                    if (property.enumDisplayNames != null && property.enumValueIndex >= 0 && property.enumValueIndex < property.enumDisplayNames.Length)
-                        return property.enumDisplayNames[property.enumValueIndex] + " (" + property.enumValueIndex + ")";
-                    return property.enumValueIndex.ToString();
-                case SerializedPropertyType.Vector2:
-                    return property.vector2Value.ToString();
-                case SerializedPropertyType.Vector3:
-                    return property.vector3Value.ToString();
-                case SerializedPropertyType.Vector4:
-                    return property.vector4Value.ToString();
-                case SerializedPropertyType.Rect:
-                    return property.rectValue.ToString();
-                case SerializedPropertyType.ArraySize:
-                    return property.intValue.ToString();
-                case SerializedPropertyType.Character:
-                    return ((char)property.intValue).ToString();
-                case SerializedPropertyType.AnimationCurve:
-                    return "AnimationCurve";
-                case SerializedPropertyType.Bounds:
-                    return property.boundsValue.ToString();
-                case SerializedPropertyType.Quaternion:
-                    return property.quaternionValue.eulerAngles.ToString();
-                default:
-                    if (property.isArray && property.propertyType != SerializedPropertyType.String)
-                        return "Array(size=" + property.arraySize + ")";
-                    return property.propertyType.ToString();
-            }
+            Component[] comps = root.GetComponentsInChildren<Component>(true);
+            foreach (Component c in comps)
+                if (c != null) result.Add(c);
         }
-        catch (Exception ex)
-        {
-            return "<error reading value: " + ex.Message + ">";
-        }
+        return result;
     }
 
-    private static string DescribeObjectReference(UnityEngine.Object obj)
+    private static List<Component> FindByType(List<Component> components, string fullName)
     {
-        if (obj == null)
-            return "<null>";
+        List<Component> result = new List<Component>();
+        foreach (Component c in components)
+            if (c != null && c.GetType().FullName == fullName) result.Add(c);
+        return result;
+    }
 
-        Component component = obj as Component;
-        if (component != null)
-            return GetHierarchyPath(component.gameObject) + " [" + component.GetType().FullName + "]";
+    private static UnityEngine.Object GetObject(SerializedObject so, string propertyName)
+    {
+        if (so == null) return null;
+        SerializedProperty p = so.FindProperty(propertyName);
+        return p != null && p.propertyType == SerializedPropertyType.ObjectReference ? p.objectReferenceValue : null;
+    }
 
+    private static string GetString(SerializedObject so, string propertyName)
+    {
+        if (so == null) return "";
+        SerializedProperty p = so.FindProperty(propertyName);
+        return p != null && p.propertyType == SerializedPropertyType.String ? p.stringValue : "";
+    }
+
+    private static bool GetBool(SerializedObject so, string propertyName, bool fallback)
+    {
+        if (so == null) return fallback;
+        SerializedProperty p = so.FindProperty(propertyName);
+        return p != null && p.propertyType == SerializedPropertyType.Boolean ? p.boolValue : fallback;
+    }
+
+    private static string Describe(UnityEngine.Object obj)
+    {
+        if (obj == null) return "<null>";
+        Component c = obj as Component;
+        if (c != null) return PathOf(c.gameObject) + " [" + c.GetType().FullName + "]";
         GameObject go = obj as GameObject;
-        if (go != null)
-            return GetHierarchyPath(go) + " [GameObject]";
-
-        string assetPath = AssetDatabase.GetAssetPath(obj);
-        if (!string.IsNullOrEmpty(assetPath))
-            return obj.name + " [" + obj.GetType().FullName + "] @ " + assetPath;
-
-        return obj.name + " [" + obj.GetType().FullName + "]";
+        if (go != null) return PathOf(go) + " [GameObject]";
+        string path = AssetDatabase.GetAssetPath(obj);
+        return obj.name + " [" + obj.GetType().FullName + "]" + (string.IsNullOrEmpty(path) ? "" : " @ " + path);
     }
 
-    private static string GetEnabledState(Component component)
-    {
-        Behaviour behaviour = component as Behaviour;
-        return behaviour != null ? behaviour.enabled.ToString() : "n/a";
-    }
-
-    private static string GetHierarchyPath(GameObject go)
+    private static string PathOf(GameObject go)
     {
         if (go == null) return "<null>";
-
-        StringBuilder sb = new StringBuilder(go.name);
-        Transform current = go.transform.parent;
-        while (current != null)
+        string path = go.name;
+        Transform t = go.transform.parent;
+        while (t != null)
         {
-            sb.Insert(0, current.name + "/");
-            current = current.parent;
+            path = t.name + "/" + path;
+            t = t.parent;
         }
-        return sb.ToString();
+        return path;
     }
 
-    private static bool IsInterestingPath(string path)
+    private static string EmptyAsDefault(string value)
     {
-        if (string.IsNullOrEmpty(path)) return false;
-        string p = path.ToLowerInvariant();
-        return p.Contains("playlist") ||
-               p.Contains("paper_tablet") ||
-               p.Contains("paper tablet") ||
-               p.Contains("vipcontentroot") ||
-               p.Contains("panel (vip)") ||
-               p.Contains("video player") ||
-               p.Contains("source manager");
+        return string.IsNullOrEmpty(value) ? "<empty/default>" : value;
     }
 
-    private static string LayerMaskToString(LayerMask mask)
-    {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 32; i++)
-        {
-            if ((mask.value & (1 << i)) == 0) continue;
-            if (sb.Length > 0) sb.Append(", ");
-            string layerName = LayerMask.LayerToName(i);
-            sb.Append(string.IsNullOrEmpty(layerName) ? i.ToString() : layerName + "(" + i + ")");
-        }
-        return sb.Length == 0 ? "Nothing" : sb.ToString();
-    }
-
-    private static void AppendSection(StringBuilder sb, string title)
+    private static void Section(StringBuilder sb, string title)
     {
         sb.AppendLine();
         sb.AppendLine(title);
@@ -525,8 +436,7 @@ public static class NovaTXLPlaylistAnalyzer
 
     private static string MakeSafeFileName(string value)
     {
-        foreach (char c in Path.GetInvalidFileNameChars())
-            value = value.Replace(c, '_');
+        foreach (char c in Path.GetInvalidFileNameChars()) value = value.Replace(c, '_');
         return value;
     }
 }
