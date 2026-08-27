@@ -116,24 +116,62 @@ The Cinema will later need a film catalog with clickable entries/links, posters/
 
 VideoTXL 2.5.x has Source Manager / playlist catalog functionality that should be inspected before building a separate custom catalog system.
 
-## READ-ONLY UNITY INSPECTION VIA CODEX + UNITY MCP
+## CODEX + UNITY MCP — CONNECTION PROVEN ✅
 
-Stef wants to use Codex with Unity-MCP for the first time to let us inspect the live Unity scene.
+A working local inspection route was established on 2026-08-27.
 
-Working rule:
+Working setup:
+
+```text
+Unity Editor
+→ KitWright MCP for Unity v1.0.0
+→ Transport Mode: Direct HTTP
+→ Codex CLI
+→ read-only Unity tool call succeeds
+```
+
+Important observations:
+
+- KitWright Broker Mode caused a Codex MCP handshake failure on this Windows setup.
+- Switching KitWright to `Direct HTTP` resolved the connection problem.
+- The Codex desktop GUI did not expose the KitWright MCP reliably during testing.
+- The Codex CLI bundled with the desktop app did work.
+- `codex mcp list` showed `kitwright` as enabled.
+- A real read-only MCP call succeeded:
+
+```text
+kitwright.get_scene_info({})
+→ active scene: Classroom
+→ path: Assets/#Classroom/Scenes/Classroom.unity
+```
+
+This proves Codex can read the actual running Unity scene through MCP.
+
+A PowerShell profile was also configured so Stef can start the CLI by typing simply:
+
+```text
+codex
+```
+
+Do not rely on a hardcoded Codex build-folder path in project documentation; the internal build id may change after updates/reinstall.
+
+## WORKING RELATIONSHIP / REGIE
+
+The new-chat workflow is intentionally:
 
 ```text
 Stef ↔ Nova in ChatGPT
-→ Nova decides what information is needed
-→ Stef gives that exact read-only instruction to Codex
-→ Codex inspects Unity via MCP
-→ Stef returns the result to this chat
-→ Stef + Nova make the decision here
+→ Nova helps think, compare options and make project decisions
+→ Nova writes one precise prompt for Codex
+→ Stef gives that prompt to Codex CLI
+→ Codex inspects Unity read-only
+→ Stef brings the result back to Nova
+→ Stef + Nova decide the next step
 ```
 
-Codex is currently an inspection tool only, not the project decision-maker.
+Codex is an inspection/execution helper, not the project decision-maker.
 
-During this phase Codex must NOT:
+During the current investigation Codex must NOT:
 
 - modify GameObjects or components
 - change Inspector values
@@ -143,22 +181,40 @@ During this phase Codex must NOT:
 - start/stop Play Mode unless explicitly approved later
 - perform automatic fixes
 
-If information can only be obtained through a potentially mutating operation, Codex must stop and report that limitation first.
+If a question cannot be answered safely read-only, Codex must stop and report that limitation.
 
 ## EXACT NEXT ACTION
 
-First establish a safe Unity-MCP connection and perform a read-only connection check only.
+The MCP connection itself is now proven, so do NOT spend more time on connection setup.
 
-Codex should initially report only:
+First read-only task in the next chat:
 
-1. which Unity project is connected;
-2. which scene is active;
-3. whether Unity is in Edit Mode;
-4. whether compile errors are present.
+### 1. Verify local Unity scripts against GitHub
 
-STOP after that first connection proof.
+Have Codex compare the local project copies of these scripts with repository truth in `mailfromstefanie/Open_Classroom`:
 
-Only after the connection is proven should the next read-only inspection map:
+- `Scripts/UIManagers/VipAccessManager.cs`
+- `Scripts/UIManagers/TXLPlaylistPrivacyFilter.cs`
+- `Scripts/UIManagers/TXLPlayPlaylistButton.cs`
+- `Scripts/UIManagers/PaperTabletTabManager.cs`
+
+Report per file only:
+
+```text
+GELIJK
+VERSCHILLEND
+LOKAAL ONTBREEKT
+GITHUB ONTBREEKT
+NIET ZEKER
+```
+
+If different, report the meaningful difference but modify nothing.
+
+Also report any relevant scene-used custom script that appears local but not in GitHub, if this can be established read-only.
+
+### 2. Only after script truth is confirmed
+
+Map the actual live scene read-only:
 
 - SyncPlayer
 - Source Manager
@@ -167,9 +223,9 @@ Only after the connection is proven should the next read-only inspection map:
 - AccessControl
 - PlayerControls
 - our custom playlist/privacy/button components
-- their actual scene hierarchy and serialized references
+- their real hierarchy and serialized references
 
-No architecture changes until this inspection is complete.
+No architecture changes until that inspection is complete.
 
 ## FIRST IMPORTANT MULTIPLAYER PROOF AFTER INSPECTION
 
