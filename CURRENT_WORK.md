@@ -2,20 +2,17 @@
 
 Last updated: 2026-08-27 (Europe/Amsterdam)
 
-## ACTIVE GOAL
+## STATUS
 
-Simplify playlist access to **button visibility only**, then re-test the real VRChat multiplayer behaviour before returning to the StefanieInVR Presentation Service.
+**PLAYLIST ACCESS / VIDEOTXL MULTIPLAYER BLOCKER CLEARED ✅**
 
-The previous multiplayer gate exposed two separate facts:
+The real VRChat multiplayer test now passes after simplifying playlist privacy to **button visibility only**.
 
-1. owner/VIP/public **selection-button visibility works as the real access boundary**;
-2. hiding `VideoSourceUI/Content` is not part of Stef's actual requirement and introduces unnecessary state/timing complexity.
+Open Classroom is no longer blocking the StefanieInVR Presentation Service.
 
-The intermittent wrong/missing playlist shown in the local VideoTXL UI remains a separate issue to investigate **after** the privacy simplification is implemented and tested.
+## ACCEPTED ACCESS MODEL
 
-## ACCEPTED ACCESS MODEL — 2026-08-27
-
-Privacy/access for playlists means only:
+Playlist access means which custom selection buttons a local user may see/use:
 
 ```text
 Visitor
@@ -25,19 +22,20 @@ VIP/admin
 → public + VIP playlist selection buttons
 
 StefanieInVR
-→ public + VIP + owner-only playlist selection buttons
+→ public + VIP + owner-only selection buttons
 ```
 
-Once any playlist/source has been started:
+Once any playlist/source is active:
 
-- the synchronized video/audio may be visible to everybody;
-- the VideoTXL playlist content/UI may be visible to everybody;
-- other users may still select/start other playlists for which they have a visible permitted button;
-- no additional privacy is required on `VideoSourceUI/Content`.
+- VideoTXL owns playback and synchronization;
+- synchronized video/audio may reach everybody;
+- VideoTXL playlist content/UI may be visible;
+- permitted users may select another playlist using their own visible custom buttons;
+- no extra privacy is applied to `VideoSourceUI/Content`.
 
-Tablet Lock remains a separate existing system. When it is enabled, non-VIPs get the existing locked/dummy view and cannot operate the normal tablet controls.
+Tablet Lock remains a separate system. Non-VIPs still receive the existing locked/dummy UI when the tablet is locked.
 
-## RESPONSIBILITY SPLIT
+## FINAL RESPONSIBILITY SPLIT
 
 ```text
 VideoTXL
@@ -48,152 +46,90 @@ VideoTXL
 
 VipAccessManager / tablet UI
 → public/VIP access
-→ tablet lock
 → VIP content
+→ tablet lock
+→ stage blocker
 
-small owner-only visibility logic
-→ show owner-only selection button only to StefanieInVR
+TXLPlaylistPrivacyFilter
+→ local owner-only selection-button visibility only
 ```
 
-Do not add VideoTXL/CommonTXL `AccessControl` for per-playlist visibility.
+Do not add VideoTXL/CommonTXL `AccessControl` for per-playlist visibility unless a future requirement actually needs it.
 
-## MULTIPLAYER TEST — IMPORTANT RESULT
+## IMPLEMENTED SIMPLIFICATION ✅
 
-Real VRChat testing with Stef, a VIP account and a normal user proved:
+`TXLPlaylistPrivacyFilter.cs` was reduced to one local responsibility:
 
-- `StefanieInVR Stream` was visible/selectable to Stef;
-- the VIP did not see the owner-only stream selection button;
-- synchronized playback still reached the VIP;
-- synchronized playback also reached a normal user;
-- VideoSourceUI playlist selection/content state is substantially local per user rather than automatically mirroring every remote source selection.
+- keep `ownerDisplayName`;
+- keep `GameObject[] ownerOnlyButtons`;
+- compare `Networking.LocalPlayer.displayName` locally;
+- show owner-only GameObjects only to the configured owner.
 
-However, while the old Content-hiding privacy filter was active, recovery/navigation was inconsistent:
+Removed from that script:
 
-```text
-owner/private source used
-→ later public source / VIP interaction
-→ VIP sometimes saw correct playlist
-→ sometimes wrong/old playlist
-→ sometimes no playlist content
-```
+- VideoSourceUI references;
+- playlist Content hiding;
+- SourceManager binding;
+- source-ready events;
+- VIP/owner playlist classification;
+- active/current source privacy logic;
+- all VideoTXL-content manipulation.
 
-Do not treat the old multiplayer gate as passed.
-
-## PRIVACY SIMPLIFICATION — READ-ONLY CODEX REVIEW COMPLETE ✅
-
-Current `TXLPlaylistPrivacyFilter` contains responsibilities that are no longer required under the accepted access model.
-
-Remove from its responsibility:
-
-- `videoSourceUI`
-- `playlistContentRoot`
-- Content `SetActive(...)` privacy
-- SourceManager binding
-- delayed initialization for privacy
-- `EVENT_URL_READY` listener
-- `OnVideoSourceReady()`
-- `RefreshPrivacy()`
-- source classification
-- `vipOnlyPlaylists`
-- `ownerOnlyPlaylists`
-- VideoTXL/current-source dependent privacy logic
-
-Keep only the local owner identity check and owner-only selection-button visibility.
-
-## IMPORTANT CURRENT SCENE WIRING
-
-Current owner identity:
-
-`StefanieInVR`
-
-Current owner-only source:
-
-`Live Stream StefanieInVR`
-
-Current owner-only selection object:
+Scene wiring now uses the full object:
 
 `PlaylistLoadButton (StefanieInVR Stream)`
 
-The existing filter currently targets only its internal `ControlArea/Button`, but the simplified owner visibility should control the **full `PlaylistLoadButton (StefanieInVR Stream)` GameObject**.
+The same object was removed from `VipAccessManager.enableWhenVip`, so VIP status cannot turn the owner-only button on.
 
-Important conflict discovered:
+`VipAccessManager.enableWhenVip` is currently empty.
 
-`VipAccessManager.enableWhenVip` currently also references the full `PlaylistLoadButton (StefanieInVR Stream)` object.
+## UDON SYNC WARNING — FIXED ✅
 
-That means the VIP manager can activate the owner-only button for every VIP. The owner-only stream object must therefore be removed from `enableWhenVip` when the simplified owner visibility is implemented.
+`TXLPlaylistPrivacyFilter` and `VipAccessManager` are on the same GameObject.
 
-Real multiplayer testing already proved that Stef currently has access to the parent VIP content, because Stef could see and use the stream button in the real instance.
+The simplified privacy script was initially set to `BehaviourSyncMode.None`, while `VipAccessManager` uses `BehaviourSyncMode.Manual` and contains synchronized state.
 
-## EXACT NEXT CHANGE — SMALL ONLY
+Unity/UdonSharp warned about mixing sync methods on the same GameObject.
 
-Allowed implementation scope:
+The privacy script was changed to:
 
-1. Simplify the existing local `TXLPlaylistPrivacyFilter.cs` so it only:
-   - stores `ownerDisplayName`;
-   - stores one or more owner-only button GameObjects;
-   - compares `Networking.LocalPlayer.displayName` locally;
-   - shows those GameObjects only to the configured owner.
-2. Point the owner-only target at the full `PlaylistLoadButton (StefanieInVR Stream)` object.
-3. Remove that same full stream button object from `VipAccessManager.enableWhenVip`.
-4. Remove obsolete VideoTXL/Content/playlist references from the simplified component.
-5. Do not change `VipAccessManager.cs`, `PaperTabletTabManager.cs`, VideoTXL package code, tablet lock logic, other playlist buttons, or any unrelated scene objects.
+`[UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]`
 
-A script rename is deliberately not required for this first safe change. Keeping the existing component avoids unnecessary Unity reference churn. Rename/cleanup can be considered later only after the behaviour is proven.
+It still has no own synced fields and does not request serialization. The change only keeps the UdonBehaviours on that GameObject compatible and removes the warning.
 
-## TEST IMMEDIATELY AFTER SIMPLIFICATION
+## REAL VRCHAT MULTIPLAYER PROOF — PASSED ✅
 
-Before investigating the playlist UI timing issue, prove the simplified access model:
+Tested in the freshly uploaded world.
 
-### Stef
-- sees public buttons;
-- sees VIP buttons;
-- sees `StefanieInVR Stream` button.
+Proven:
 
-### VIP non-owner
-- sees public + VIP buttons;
-- does NOT see `StefanieInVR Stream` selection button;
-- may see VideoTXL content for a source after it is active;
-- may select another permitted playlist.
+- StefanieInVR sees the owner-only `StefanieInVR Stream` selection button;
+- VIP non-owner does not see the owner-only stream selection button;
+- ordinary users cannot enter the VIP panel, so they cannot access that owner-only button;
+- synchronized playback reaches VIPs and ordinary users;
+- users may use their own permitted playlist buttons;
+- after the simplification, the previously observed wrong/missing playlist UI behaviour could no longer be reproduced during the full retest;
+- playlist switching and the VideoTXL UI behaved correctly in that retest.
 
-### ordinary visitor
-- does not gain the owner-only selection button;
-- receives synchronized playback normally;
-- tablet lock behaviour remains unchanged.
+Important evidence distinction:
 
-## SEPARATE ISSUE — PLAYLIST UI SELECTION/TIMING
+The disappearance of the intermittent UI problem after removing Content-hiding is strong evidence that the old privacy/content interaction was involved. The exact internal timing/root cause was not instrumented separately, so do not claim a more specific mechanism than the test proves.
 
-Do not mix this into the privacy change.
+## BLOCKER RESULT
 
-Observed real multiplayer symptom:
-
-- after source changes, pressing a permitted custom playlist button sometimes shows the correct playlist in VideoSourceUI;
-- sometimes an old/wrong playlist is shown;
-- sometimes no playlist content appears.
-
-Likely area to inspect later:
+The accepted gate is now satisfied:
 
 ```text
-TXLPlayPlaylistButton.PlayAndShow()
-→ Playlist._MoveTo(0)
-→ currentUrlSource/source-ready timing
-→ VideoSourceUI._SelectActive()
+owner-only source selection is hidden from unauthorized users
++ synchronized playback still works
++ permitted playlist switching works
++ VideoTXL UI remains usable
++ normal tablet/VIP access remains intact
 ```
 
-This is still a hypothesis until separately proven.
+**Result: PASS.**
 
-## BUTTON WIRING — VERIFIED ✅
-
-The active scene contains 12 `TXLPlayPlaylistButton` instances.
-
-All 12 use:
-
-`SendCustomEvent("PlayAndShow")`
-
-The active Unity project contains one relevant script copy:
-
-`Assets/StefanieInVR/Scripts/TXLPlayPlaylistButton.cs`
-
-`PlayAndShow()` is the actual working public method. Earlier Codex output mentioning `Play()` was a reporting error, not scene truth.
+No further VideoTXL/privacy work is required before resuming the Presentation Service.
 
 ## ACTIVE UNITY PROJECT
 
@@ -218,21 +154,31 @@ Unity Editor
 → Codex CLI
 ```
 
-Use small precise tasks. During inspection, default to read-only. During an approved implementation task, allow only the exact files/scene references named in that task.
+Keep future Codex tasks small and precisely scoped. Prefer read-only inspection until a specific change is approved.
 
-## PRESENTATION SERVICE BLOCKER
+## NEXT PROJECT
 
-The Presentation Service remains paused until:
-
-1. simplified button-only playlist access is implemented;
-2. it passes a real multiplayer check;
-3. the separate playlist-UI selection/timing problem is understood/fixed enough that permitted playlist buttons reliably show their intended playlist.
-
-Then return to:
+Return to:
 
 `mailfromstefanie/StefanieInVR-Presentation-Service`
 
-Milestone 3 — one real private Free Plan presentation slot.
+Resume:
+
+**Milestone 3 — one real private Free Plan presentation slot.**
+
+## FUTURE OPEN CLASSROOM IDEAS — PARKED
+
+Later, the architecture may support a central content manager for multiple worlds, for example:
+
+```text
+StefanieInVR Content Manager
+→ Open Classroom catalog
+→ Open Arthouse Cinema catalog
+```
+
+Potential fields: title, description, image URL, media URL, category, order, enabled state and access level.
+
+Do not build this while Presentation Service Milestone 3 is active.
 
 ## WORKING RULE
 
@@ -240,6 +186,6 @@ Milestone 3 — one real private Free Plan presentation slot.
 inspect
 → make one small permanent-oriented change
 → test in real VRChat where multiplayer matters
-→ record result
-→ only then continue
+→ record proven result
+→ continue only after proof
 ```
