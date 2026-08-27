@@ -4,351 +4,242 @@ Last updated: 2026-08-27 (Europe/Amsterdam)
 
 ## ACTIVE GOAL
 
-Finish one real VRChat multiplayer proof of the now-understood VideoTXL 2.5.1 privacy/access architecture, then return to the StefanieInVR Presentation Service.
+Simplify playlist access to **button visibility only**, then re-test the real VRChat multiplayer behaviour before returning to the StefanieInVR Presentation Service.
 
-The read-only Unity/Codex investigation is complete enough to stop broad architecture research.
+The previous multiplayer gate exposed two separate facts:
 
-## CURRENT ARCHITECTURE — VERIFIED DIRECTION
+1. owner/VIP/public **selection-button visibility works as the real access boundary**;
+2. hiding `VideoSourceUI/Content` is not part of Stef's actual requirement and introduces unnecessary state/timing complexity.
 
-The trusted model is now:
+The intermittent wrong/missing playlist shown in the local VideoTXL UI remains a separate issue to investigate **after** the privacy simplification is implemented and tested.
+
+## ACCEPTED ACCESS MODEL — 2026-08-27
+
+Privacy/access for playlists means only:
+
+```text
+Visitor
+→ public playlist selection buttons
+
+VIP/admin
+→ public + VIP playlist selection buttons
+
+StefanieInVR
+→ public + VIP + owner-only playlist selection buttons
+```
+
+Once any playlist/source has been started:
+
+- the synchronized video/audio may be visible to everybody;
+- the VideoTXL playlist content/UI may be visible to everybody;
+- other users may still select/start other playlists for which they have a visible permitted button;
+- no additional privacy is required on `VideoSourceUI/Content`.
+
+Tablet Lock remains a separate existing system. When it is enabled, non-VIPs get the existing locked/dummy view and cannot operate the normal tablet controls.
+
+## RESPONSIBILITY SPLIT
 
 ```text
 VideoTXL
-→ owns playback + synchronization
-→ all Playlist/source objects may remain active
+→ playlist/source objects
+→ playback
+→ synchronization
+→ playlist content UI
 
-native VideoTXL source selector
-→ hidden
+VipAccessManager / tablet UI
+→ public/VIP access
+→ tablet lock
+→ VIP content
 
-our tablet UI
-→ owns who may DISCOVER / SELECT a source
-
-TXLPlaylistPrivacyFilter
-→ locally hides restricted active-playlist CONTENT from unauthorized users
-→ currently also hides the owner-only stream button for non-owner users
+small owner-only visibility logic
+→ show owner-only selection button only to StefanieInVR
 ```
 
-Important distinction:
+Do not add VideoTXL/CommonTXL `AccessControl` for per-playlist visibility.
 
-> A restricted source may still play and synchronize to everybody. Privacy here means who can discover/select the source and who may inspect its playlist content/navigation locally.
+## MULTIPLAYER TEST — IMPORTANT RESULT
 
-Do not use VideoTXL/CommonTXL `AccessControl` as per-playlist privacy. No `AccessControl` scene-instance is currently connected to the player, and `SyncPlayer.accessControl` is null.
+Real VRChat testing with Stef, a VIP account and a normal user proved:
 
-## BUTTON FLOW — WORKING
+- `StefanieInVR Stream` was visible/selectable to Stef;
+- the VIP did not see the owner-only stream selection button;
+- synchronized playback still reached the VIP;
+- synchronized playback also reached a normal user;
+- VideoSourceUI playlist selection/content state is substantially local per user rather than automatically mirroring every remote source selection.
 
-The normal custom playlist buttons are working with VideoTXL 2.5.1:
+However, while the old Content-hiding privacy filter was active, recovery/navigation was inconsistent:
 
 ```text
-custom tablet Button
-→ TXLPlayPlaylistButton.PlayAndShow()
-→ Playlist._MoveTo(0)
-→ VideoSourceUI._SelectActive()
-→ first track starts and the active playlist is shown locally
+owner/private source used
+→ later public source / VIP interaction
+→ VIP sometimes saw correct playlist
+→ sometimes wrong/old playlist
+→ sometimes no playlist content
 ```
 
-The old `PlaylistLoadData._Load()` OnClick route is no longer required for playlist sources that already exist as their own Playlist under the new Source Manager.
+Do not treat the old multiplayer gate as passed.
 
-## READ-ONLY UNITY INSPECTION — COMPLETE ✅
+## PRIVACY SIMPLIFICATION — READ-ONLY CODEX REVIEW COMPLETE ✅
 
-Active Unity project:
+Current `TXLPlaylistPrivacyFilter` contains responsibilities that are no longer required under the accepted access model.
 
-`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+Remove from its responsibility:
 
-Important note:
+- `videoSourceUI`
+- `playlistContentRoot`
+- Content `SetActive(...)` privacy
+- SourceManager binding
+- delayed initialization for privacy
+- `EVENT_URL_READY` listener
+- `OnVideoSourceReady()`
+- `RefreshPrivacy()`
+- source classification
+- `vipOnlyPlaylists`
+- `ownerOnlyPlaylists`
+- VideoTXL/current-source dependent privacy logic
 
-`E:/GitHub/Open_Classroom` is a separate older local checkout and must not be treated as the active Unity project. GitHub `mailfromstefanie/Open_Classroom` `main` remains durable repository truth.
+Keep only the local owner identity check and owner-only selection-button visibility.
 
-The four relevant active Unity script copies were checked against current GitHub content and were meaningfully equal:
+## IMPORTANT CURRENT SCENE WIRING
 
-- `VipAccessManager.cs`
-- `TXLPlaylistPrivacyFilter.cs`
-- `TXLPlayPlaylistButton.cs`
-- `PaperTabletTabManager.cs`
+Current owner identity:
 
-### Scene map
+`StefanieInVR`
 
-`SyncPlayer`:
-
-`UIs/Sync Video Player Full`
-
-`SourceManager`:
-
-`UIs/Sync Video Player Full/Source Manager`
-
-`VideoSourceUI`:
-
-`UIs/Paper Tablet System/AudioLinkControllerBody/Objects to Toggle/PlayerControls/PlayerControls/Video Source UI`
-
-`PlayerControls`:
-
-`UIs/Paper Tablet System/AudioLinkControllerBody/Objects to Toggle/PlayerControls/PlayerControls`
-
-`AccessControl`:
-
-- no `Texel.AccessControl` scene-instance found
-- `SyncPlayer.accessControl == null`
-
-## SOURCE MANAGER — VERIFIED
-
-The active SourceManager contains 22 Playlist sources.
-
-All 22 were active during inspection:
-
-```text
-activeSelf = true
-activeInHierarchy = true
-```
-
-This confirms that privacy is not implemented by disabling VideoTXL source objects.
-
-The current owner-only source is:
+Current owner-only source:
 
 `Live Stream StefanieInVR`
 
-A small unrelated catalog-data mismatch was observed at source index 12: the GameObject naming and `sourceName` do not match. Do not fix this during the privacy gate unless Stef explicitly chooses to clean it up later.
+Current owner-only selection object:
 
-## NATIVE VIDEOTXL SOURCE SELECTOR — VERIFIED HIDDEN
+`PlaylistLoadButton (StefanieInVR Stream)`
 
-`VideoSourceUI.buttonRoot` points to:
+The existing filter currently targets only its internal `ControlArea/Button`, but the simplified owner visibility should control the **full `PlaylistLoadButton (StefanieInVR Stream)` GameObject**.
 
-`UIs/Paper Tablet System/AudioLinkControllerBody/Objects to Toggle/PlayerControls/PlayerControls/Video Source UI/Canvas/Footer`
+Important conflict discovered:
 
-Verified state:
+`VipAccessManager.enableWhenVip` currently also references the full `PlaylistLoadButton (StefanieInVR Stream)` object.
 
-```text
-activeSelf = false
-activeInHierarchy = false
-```
+That means the VIP manager can activate the owner-only button for every VIP. The owner-only stream object must therefore be removed from `enableWhenVip` when the simplified owner visibility is implemented.
 
-Therefore VideoTXL's automatically generated source-selection buttons are not the user-facing discovery route.
+Real multiplayer testing already proved that Stef currently has access to the parent VIP content, because Stef could see and use the stream button in the real instance.
 
-Our own tablet buttons remain the intended navigation route.
+## EXACT NEXT CHANGE — SMALL ONLY
 
-## VIDEOSOURCEUI REMOTE BEHAVIOUR — VERIFIED FROM VIDEOTXL 2.5.1 CODE
+Allowed implementation scope:
 
-A remote synchronized source change DOES update the receiving player's VideoTXL playback/current source.
+1. Simplify the existing local `TXLPlaylistPrivacyFilter.cs` so it only:
+   - stores `ownerDisplayName`;
+   - stores one or more owner-only button GameObjects;
+   - compares `Networking.LocalPlayer.displayName` locally;
+   - shows those GameObjects only to the configured owner.
+2. Point the owner-only target at the full `PlaylistLoadButton (StefanieInVR Stream)` object.
+3. Remove that same full stream button object from `VipAccessManager.enableWhenVip`.
+4. Remove obsolete VideoTXL/Content/playlist references from the simplified component.
+5. Do not change `VipAccessManager.cs`, `PaperTabletTabManager.cs`, VideoTXL package code, tablet lock logic, other playlist buttons, or any unrelated scene objects.
 
-However `VideoSourceUI` does NOT automatically switch its selected content panel when another player changes the active source.
+A script rename is deliberately not required for this first safe change. Keeping the existing component avoids unnecessary Unity reference churn. Rename/cleanup can be considered later only after the behaviour is proven.
 
-Verified code facts:
+## TEST IMMEDIATELY AFTER SIMPLIFICATION
 
-- `VideoSourceUI` listens for source add/remove and source enable changes.
-- It does not listen for `SourceManager.EVENT_URL_READY`, Playlist track-change events, or SyncPlayer source-change events in a way that selects the active panel.
-- `VideoSourceUI._SelectActive()` reads the current local `currentUrlSource` only when `_SelectActive()` is called locally.
-- `PlayerControls._HandlePlaylist()` can locally call `_SelectActive()` when the playlist/source panel is opened.
-- `TXLPlayPlaylistButton.PlayAndShow()` also calls `_SelectActive()` locally after starting its playlist.
+Before investigating the playlist UI timing issue, prove the simplified access model:
 
-Meaning:
+### Stef
+- sees public buttons;
+- sees VIP buttons;
+- sees `StefanieInVR Stream` button.
 
-```text
-owner starts restricted source
-→ everyone receives playback
-→ other users' VideoSourceUI does NOT automatically jump to that source panel
-```
+### VIP non-owner
+- sees public + VIP buttons;
+- does NOT see `StefanieInVR Stream` selection button;
+- may see VideoTXL content for a source after it is active;
+- may select another permitted playlist.
 
-But later opening the playlist panel locally can call `_SelectActive()` and select the currently synchronized source panel if its content root is visible.
+### ordinary visitor
+- does not gain the owner-only selection button;
+- receives synchronized playback normally;
+- tablet lock behaviour remains unchanged.
 
-This is why a local restricted-content guard still has a real role.
+## SEPARATE ISSUE — PLAYLIST UI SELECTION/TIMING
 
-## TXLPlaylistPrivacyFilter — ACTUAL CURRENT ROLE
+Do not mix this into the privacy change.
 
-Current scene instance:
+Observed real multiplayer symptom:
 
-`UIs/Managers/VipAccessManager`
+- after source changes, pressing a permitted custom playlist button sometimes shows the correct playlist in VideoSourceUI;
+- sometimes an old/wrong playlist is shown;
+- sometimes no playlist content appears.
 
-Current references:
-
-- `videoSourceUI` → active VideoSourceUI
-- `playlistContentRoot` → `Video Source UI/Canvas/Content`
-- `vipAccessManager` → `UIs/Managers/VipAccessManager`
-- `vipOnlyPlaylists` → length 0
-- `ownerDisplayName` → `StefanieInVR`
-- `ownerOnlyPlaylists` → length 1: `Live Stream StefanieInVR`
-- `ownerOnlyButtons` → length 1: StefanieInVR Stream button inside VIP content
-
-Therefore the script currently does NOT provide any VIP-playlist content filtering because `vipOnlyPlaylists` is empty.
-
-Its current live privacy responsibility is owner-only:
+Likely area to inspect later:
 
 ```text
-owner-only source active
-+ local player is not StefanieInVR
-→ Video Source UI/Canvas/Content is locally SetActive(false)
+TXLPlayPlaylistButton.PlayAndShow()
+→ Playlist._MoveTo(0)
+→ currentUrlSource/source-ready timing
+→ VideoSourceUI._SelectActive()
 ```
 
-It also locally hides the owner-only stream button for non-owner users.
+This is still a hypothesis until separately proven.
 
-## CONTENT ACTIVATION — VERIFIED
+## BUTTON WIRING — VERIFIED ✅
 
-Exact guarded GameObject:
+The active scene contains 12 `TXLPlayPlaylistButton` instances.
 
-`Video Source UI/Canvas/Content`
+All 12 use:
 
-Read-only code/reference inspection found:
+`SendCustomEvent("PlayAndShow")`
 
-- `TXLPlaylistPrivacyFilter.ApplyForSource()` is the only direct scene-relevant callsite that toggles this exact Content GameObject.
-- `VideoSourceUI._SelectActive()` does NOT activate Content.
-- `VideoSourceUI._Select()` does NOT activate Content; it only changes child content panels.
-- `VideoSourceUI._Rebuild()` does not activate Content.
-- `PlayerControls._HandlePlaylist()` toggles the parent Canvas, not Content itself.
-- `PaperTabletTabManager` also toggles the parent Canvas, not Content itself.
-- VideoTXL 2.5.1 was not found to call `contentRoot.SetActive(true/false)`.
+The active Unity project contains one relevant script copy:
 
-Therefore:
+`Assets/StefanieInVR/Scripts/TXLPlayPlaylistButton.cs`
 
-```text
-restricted source is active
-→ privacy filter hides Content locally
-→ user opens playlist/source panel
-→ VideoTXL may activate Canvas and select a child panel
-→ Content itself remains inactive
-→ restricted playlist title/tracks/navigation remain hidden
-```
+`PlayAndShow()` is the actual working public method. Earlier Codex output mentioning `Play()` was a reporting error, not scene truth.
 
-This means `TXLPlaylistPrivacyFilter` must NOT simply be removed before a replacement for this narrow content-guard responsibility exists.
+## ACTIVE UNITY PROJECT
 
-## VIP / TABLET ACCESS — CURRENT OWNERSHIP
+Use the actual Unity project:
 
-`VipAccessManager` + `PaperTabletTabManager` already own the main local VIP/tablet filtering.
+`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
-Intended responsibility split:
+Do not confuse it with the separate older local checkout:
 
-```text
-VipAccessManager / tablet UI
-→ who may see/select VIP-facing controls
+`E:/GitHub/Open_Classroom`
 
-TXLPlaylistPrivacyFilter
-→ protect VideoSourceUI Content when the currently synchronized source is restricted
-→ currently also owner-button visibility
+GitHub `mailfromstefanie/Open_Classroom` `main` remains durable project memory.
 
-VideoTXL
-→ playback + synchronization
-```
+## CODEX + UNITY MCP
 
-Avoid adding extra privacy systems unless a real test proves a missing case.
-
-## CURRENT DECISION
-
-Do NOT remove `TXLPlaylistPrivacyFilter` now.
-
-The earlier idea that the privacy filter might be completely unnecessary is rejected by the code inspection: opening the local VideoTXL playlist panel can select the currently synchronized restricted source, so the Content guard prevents unauthorized playlist details/navigation from becoming visible.
-
-At the same time, the filter's purpose is now much narrower and clearer than before. It is not a source playback/synchronization filter.
-
-Do not refactor or split the script until the real multiplayer proof passes. The current working system is more valuable than an untested cleanup.
-
-## EXACT NEXT ACTION — REAL VRCHAT MULTIPLAYER GATE
-
-No more broad Codex scene research before this test.
-
-Run one real two-user VRChat test with:
-
-- Stef / owner
-- a second user who is VIP but is NOT `StefanieInVR`
-
-Why VIP is the important second user: the owner-only stream button lives inside VIP content, so a VIP is the strongest relevant unauthorized user for this test.
-
-### Test A — baseline public/VIP navigation
-
-1. Second user opens a normal permitted playlist.
-2. Confirm its playlist content/navigation is visible and usable as expected.
-
-### Test B — owner-only source
-
-1. Stef starts `Live Stream StefanieInVR`.
-2. Confirm second user receives the synchronized video/audio playback.
-3. Confirm the owner-only stream selection button is NOT visible/selectable for the second user.
-4. Confirm restricted `VideoSourceUI/Content` is not visible to the second user.
-5. Have the second user close/reopen the VideoTXL playlist/source panel.
-6. Confirm the owner-only playlist title/tracks/navigation still do NOT become visible.
-
-### Test C — recovery
-
-1. Stef switches back to a normal permitted source.
-2. Confirm the second user's permitted playlist content/navigation can become visible normally again.
-
-### PASS GATE
-
-The Classroom blocker is considered cleared for the Presentation Service when the real multiplayer test proves:
-
-```text
-restricted source can synchronize playback to everybody
-WITHOUT giving unauthorized users discovery/selection access
-AND WITHOUT exposing restricted playlist content/navigation
-AND normal permitted content recovers correctly afterward
-```
-
-If this passes, record the result and return to `mailfromstefanie/StefanieInVR-Presentation-Service` Milestone 3.
-
-If it fails, fix only the exact failed responsibility. Do not redesign the whole architecture.
-
-ClientSim/editor proof is not final multiplayer evidence.
-
-## FUTURE CONTENT-MANAGEMENT REQUIREMENT — PARKED UNTIL BLOCKER PASSES
-
-The architecture should later support externally maintained content for multiple worlds, for example:
-
-```text
-StefanieInVR Content Manager
-→ Open Classroom catalog
-→ Open Arthouse Cinema catalog
-```
-
-Potential externally maintained fields include title, description, image URL, media URL, category, order, enabled state and access level.
-
-Do not design/build this yet. First finish the multiplayer gate and return to the Presentation Service milestone that was paused for this investigation.
-
-## CODEX + UNITY MCP — WORKING ROUTE ✅
-
-Working setup:
+Working route:
 
 ```text
 Unity Editor
-→ KitWright MCP for Unity v1.0.0
-→ Transport Mode: Direct HTTP
+→ KitWright MCP for Unity
+→ Direct HTTP
 → Codex CLI
-→ read-only Unity tool calls
 ```
 
-Important observations:
+Use small precise tasks. During inspection, default to read-only. During an approved implementation task, allow only the exact files/scene references named in that task.
 
-- Broker Mode caused a Codex MCP handshake failure on this Windows setup.
-- Direct HTTP resolved it.
-- Codex CLI worked reliably for Unity inspection.
-- Codex desktop GUI did not expose the same MCP route reliably during testing.
-- Stef can start the CLI by typing `codex` in PowerShell.
-- Do not document a hardcoded Codex build-folder path because it may change after updates/reinstall.
+## PRESENTATION SERVICE BLOCKER
 
-Preferred workflow:
+The Presentation Service remains paused until:
 
-```text
-Stef ↔ Nova
-→ Nova decides the question
-→ Nova writes a small precise Codex prompt
-→ Codex inspects Unity read-only
-→ result returns to Nova
-→ next decision
-```
+1. simplified button-only playlist access is implemented;
+2. it passes a real multiplayer check;
+3. the separate playlist-UI selection/timing problem is understood/fixed enough that permitted playlist buttons reliably show their intended playlist.
 
-## SERIALIZATION ERROR CLEANUP — RESOLVED
+Then return to:
 
-Repeated UdonSharp/Odin `ArgumentNullException: unityObject` errors were traced to obsolete prefab:
+`mailfromstefanie/StefanieInVR-Presentation-Service`
 
-`Assets/StefanieInVR/Prefabs/UIs/UIs 7.prefab`
-
-It contained Missing Script components, was no longer needed and was deleted from the real project. The rest of the project/console was reported clean afterward.
-
-Do not treat the privacy scripts as the cause of that old serialization problem.
+Milestone 3 — one real private Free Plan presentation slot.
 
 ## WORKING RULE
 
-Use simple Dutch and one small testable step at a time:
-
 ```text
 inspect
-→ explain briefly
-→ change nothing until proven necessary
-→ exact real test
-→ record proven result
-→ choose next smallest step
+→ make one small permanent-oriented change
+→ test in real VRChat where multiplayer matters
+→ record result
+→ only then continue
 ```
