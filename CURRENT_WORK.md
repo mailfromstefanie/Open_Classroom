@@ -180,6 +180,16 @@ Potential fields: title, description, image URL, media URL, category, order, ena
 
 Do not build this while Presentation Service Milestone 3 is active.
 
+## DURABLE VIDEOTXL REFERENCE
+
+Before future player, playlist, remote-catalog or Cinema reuse work, read:
+
+`VIDEOTXL_2_5_1_FINDINGS.md`
+
+It records the verified VideoTXL 2.5.1 behaviour, the final button-only access model, the meaning of the PlaylistData JSON Inspector box, runtime PlaylistData/_LoadData building blocks, and the future online-JSON playlist/content-manager direction with explicit items that still require testing.
+
+Do not reconstruct these facts from old chats when this file exists.
+
 ## WORKING RULE
 
 ```text
