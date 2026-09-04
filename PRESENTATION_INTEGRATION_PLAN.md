@@ -129,3 +129,29 @@ one small scene change
 ```
 
 Stef receives full scripts, not partial code fragments.
+
+## Presentation Mode — restore previous video
+
+Accepted design decision:
+
+When Presentation Mode starts, the controller should remember the current VideoTXL playback context before replacing it with a Presentation Slot.
+
+Target behaviour:
+
+```text
+normal VideoTXL video playing
+-> start Presentation Mode
+-> remember previous VideoTXL source/context + approximate playback time + pause/play state
+-> load selected Presentation Slot
+-> presentation navigation uses the same SyncPlayer/screen
+-> press Back to Video
+-> restore the previous VideoTXL source
+-> seek back to the remembered time
+-> restore the previous pause/play state
+```
+
+Implementation note:
+
+Use the existing VideoTXL 2.5.1 runtime state/API where possible. Do not create a second player merely to preserve the old video. First prove source/time restoration with the real Classroom wiring; only then generalize/package it.
+
+This feature is part of the intended polished Classroom Presentation Mode, not an optional future idea.
