@@ -1,5 +1,41 @@
 # Current Work — Open Classroom
 
+Last updated: 2026-09-04 (Europe/Amsterdam)
+
+## ACTIVE TASK
+
+**VRCHAT PRESENTATION PREFAB / CLASSROOM INTEGRATION — ACTIVE ▶️**
+
+The hosted Presentation Service Milestone 4 has passed production acceptance. Open Classroom is now the active integration project.
+
+Architecture locked for the first proof:
+
+```text
+10 stable Presentation Slot MP4s
+-> dedicated VideoTXL Playlist source
+-> PresentationController
+-> existing VideoTXL SyncPlayer
+-> existing projector/screen
+-> Previous / Next seek one second per slide
+```
+
+Do not create a second video player yet. Reuse the current VideoTXL 2.5.1 player and screen.
+
+Read `PRESENTATION_INTEGRATION_PLAN.md` before making scene changes.
+
+### Exact next action
+
+In the real Unity project:
+
+`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+
+create the dedicated project folder and an empty scene root for the Presentation system. Then add the first full `PresentationController.cs` and wire it one reference at a time.
+
+Stef receives full-file scripts and microsteps.
+
+---
+
+
 Last updated: 2026-08-27 (Europe/Amsterdam)
 
 ## STATUS
