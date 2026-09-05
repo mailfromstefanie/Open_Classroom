@@ -4,21 +4,22 @@ Last updated: 2026-09-05 (Europe/Amsterdam)
 
 ## STATUS
 
-**PRESENTATION SERVICE LIVE — CLASSROOM PRESENTATION INTEGRATION CURRENTLY DISMANTLED — REBUILD PHASE ACTIVE**
+**PRESENTATION SERVICE LIVE — OLD CLASSROOM INTEGRATION DISMANTLED — STANDALONE PREFAB ARCHITECTURE ACCEPTED**
 
-The hosted StefanieInVR Presentation Service is live.
+The reusable StefanieInVR Presentation product is no longer planned as a VideoTXL-bound playlist feature.
 
-Stef confirms that the previous Presentation integration in the real Open Classroom scene has been dismantled. The current Classroom must therefore not be described as beta-ready with the Presentation Service.
+The current accepted direction is a standalone Core with its own lightweight VRChat video backend, plus optional integrations for existing video systems.
 
-Important repository boundary:
+Read first:
 
-- this GitHub snapshot does not currently contain a committed `PresentationController.cs`;
-- the real Unity scene must be inspected to see what foundation remains;
-- rebuild only the smallest safe Presentation path on top of the existing VideoTXL player/screen architecture.
+1. `PRESENTATION_ARCHITECTURE_DECISION.md`
+2. `CURRENT_WORK.md`
+3. this file
+4. `VIDEOTXL_2_5_1_FINDINGS.md` only when implementing the VideoTXL adapter
 
 ## PRODUCT CONTRACT
 
-Hosted service:
+Hosted Presentation Service:
 
 - 10 stable Presentation Slot MP4 URLs;
 - PDF input;
@@ -28,93 +29,187 @@ Hosted service:
 
 Reusable prefab:
 
-- must not depend on Stef's hosting only;
-- must allow creators to configure their own compatible MP4 URLs/hosting;
-- should reuse an existing compatible VideoTXL player/screen rather than ship a duplicate player by default;
-- should be practical to place into another VRChat world, including later Art House Cinema integration.
+- must not depend on Stef's hosting;
+- creators can configure their own compatible direct MP4 URLs;
+- must work without VideoTXL/ProTV/USharpVideo installed;
+- standard display path is its own rollout Presentation Screen;
+- optional output can target a compatible existing Renderer/material;
+- optional typed integrations may suspend/restore existing video players and reuse their physical screen.
 
-## ACCEPTED CLASSROOM ARCHITECTURE
-
-Target architecture unless real testing disproves it:
-
-```text
-Presentation UI / controller
--> Presentation Playlist/source
--> existing VideoTXL 2.5.1 SyncPlayer
--> existing projector/screen
-
-Previous / Next
--> synchronized seek
--> one second per slide
-```
-
-Why:
-
-- existing Classroom custom buttons already use VideoTXL playlist/source routing;
-- VideoTXL `SyncPlayer._SetTargetTime(float)` is the accepted synchronized seek path;
-- VideoTXL exposes runtime pause/time/seekability state;
-- `SyncPlayer._TriggerPause()` provides synchronized pause state;
-- the existing screen visibility helper can keep a paused slide visible.
-
-Do not add a second AVPro/Unity player unless real testing proves this route cannot support the prefab.
-
-## PERFORMANCE / EXCLUSIVE PLAYBACK STRATEGY — 2026-09-05
-
-Presentation mode should be designed so only one video playback pipeline is actively decoding at a time on each client, especially on Quest/Android.
-
-Important architecture distinction:
-
-- Pausing an arbitrary underlying `BaseVRCVideoPlayer` is broadly possible, but VRChat documentation does not guarantee that `Pause()` releases decoder/resources.
-- For strongest Quest performance, prefer a player-native local suspend/stop mechanism that stops the inactive backend while preserving the wrapper's sync state.
-- Do not directly `Stop()` an unknown third-party player's internal `BaseVRCVideoPlayer` as the default integration path, because the wrapper may interpret the stop event, immediately restart it, advance a playlist, or lose the state needed for clean restore.
-
-VideoTXL 2.5.1 has an ideal integration hook:
-
-- `SyncPlayer.LocalPlaybackEnabled = false` calls the local playback stop path and stops the active VideoTXL backend on that client.
-- The synchronized world state continues independently.
-- Setting `LocalPlaybackEnabled = true` later lets VideoTXL restore local playback from its synchronized timing logic.
-- This is preferable to merely pausing VideoTXL while the standalone Presentation Player is active.
-
-Recommended Presentation adapter contract:
+## ACCEPTED STANDALONE ARCHITECTURE
 
 ```text
-Enter Presentation Mode
--> suspend existing world video player locally
--> confirm inactive player backend is not decoding
--> start Presentation Player
--> show Presentation output on target screen
+Presentation Controller
+-> Presentation Sync
+-> Presentation Session/state machine
+-> own VRCUnityVideoPlayer
+-> own display output
 
-Exit Presentation Mode
--> stop Presentation Player completely
--> restore screen ownership
--> resume/re-enable existing world video player locally
--> allow its own sync layer to catch up
+Optional adapter layer
+-> VideoTXL
+-> later ProTV / others
 ```
 
-Integration tiers:
+The Core must not reference third-party video-player types.
 
-1. Native suspend adapter (preferred)
-   - VideoTXL: use LocalPlaybackEnabled.
-   - ProTV / other known players: use their supported local pause/stop/sync APIs where available.
+## NETWORK / MULTIPLAYER MODEL
 
-2. Generic wrapper-event adapter
-   - configurable UdonBehaviour + event names for suspend/resume if the third-party player exposes an API.
+Shared state:
 
-3. Raw BaseVRCVideoPlayer fallback
-   - last resort only.
-   - Pause is safer for state preservation but not guaranteed to free all decoder resources.
-   - Stop gives stronger inactivity but may break or fight the third-party sync/controller logic.
+```text
+modeActive
+slotIndex
+slideIndex
+revision
+```
 
-Do not promise universal "any player" hard-stop compatibility without a player-specific or configured suspend adapter.
+Every client performs playback locally.
 
-## VERIFIED LOCAL VIDEOTXL 2.5.1 PACKAGE EVIDENCE — 2026-09-05
+Do not synchronize continuous video time. The presentation's steady state is a held/paused page, so slot + slide is the useful truth.
+
+Late joiner behavior:
+
+```text
+receive latest serialized state
+-> if modeActive, locally reconstruct selected slot/slide
+-> do not mutate authoritative shared state
+```
+
+The revision counter exists to reject stale/out-of-order semantic updates.
+
+## V1 PLAYBACK CONTRACT
+
+Backend:
+
+- one `VRCUnityVideoPlayer`;
+- no AVPro in V1 unless later device evidence proves a real need;
+- direct MP4 only.
+
+Within one selected slot:
+
+```text
+LoadURL once
+-> wait until ready
+-> seek to target slide
+-> pause
+-> keep MP4 loaded
+
+Next/Previous/First
+-> local seek
+-> pause again
+```
+
+Do not Stop and reload after every slide.
+
+Reason:
+
+- no snapshot is needed for networking;
+- reloading may collide with VRChat's global per-client video URL budget/cooldown;
+- keeping one presentation MP4 loaded gives responsive navigation;
+- Stef already has a practical Quest baseline where one active video player works fine.
+
+## SNAPSHOT STATUS
+
+A persistent RenderTexture snapshot was suggested by research as an optional performance experiment.
+
+Current decision:
+
+**not part of the default V1 architecture.**
+
+Only revisit snapshot-and-stop if measured Quest testing shows that a paused `VRCUnityVideoPlayer` creates a meaningful performance or thermal problem.
+
+Any snapshot optimization must prove:
+
+- navigation remains responsive;
+- no extra URL reload is required for same-slot navigation, or the latency is acceptable;
+- Quest performance benefit is measurable;
+- frame capture is reliable.
+
+## QUEST / DECODER POLICY
+
+Design target:
+
+**one intentionally active playback pipeline at a time.**
+
+```text
+NORMAL MODE
+normal world player active
+Presentation player stopped
+
+PRESENTATION MODE
+normal player locally suspended/stopped where safely supported
+Presentation player active / usually paused
+
+EXIT
+Presentation player stopped
+normal player restored/resynced
+```
+
+Important limits:
+
+- Pause is not treated as proof that decoder resources are released.
+- Unknown third-party players are not hard-stopped by directly calling their internal `BaseVRCVideoPlayer`.
+- A generic integration cannot promise strict one-decoder behavior.
+- In the standalone product, creators may need to pause/stop their unrelated player themselves.
+- Quest claims require real headset tests.
+
+## DISPLAY OPTIONS
+
+### Standard standalone path
+
+Own rollout Presentation Screen.
+
+This is the guaranteed product path and should require no other media prefab.
+
+### Generic existing-screen path
+
+Allow creator configuration for:
+
+- target Renderer;
+- material index/property where practical;
+- restoration of the prior state.
+
+Use this only when the material/property is not continuously overwritten by another ScreenManager.
+
+### Typed player integration
+
+For managed video systems, prefer their own display/output API instead of fighting their material updates.
+
+## VIDEOTXL 2.5.1 — OPTIONAL CLASSROOM INTEGRATION
+
+VideoTXL remains the strongest known integration for Stef's own Open Classroom.
+
+Preferred enter path:
+
+```text
+Presentation requested
+-> VideoTXL LocalPlaybackEnabled = false
+-> wait/confirm local VideoTXL playback is suspended as needed
+-> activate standalone Presentation player
+-> display on rollout screen OR existing VideoTXL physical screen
+```
+
+Preferred exit path:
+
+```text
+Stop Presentation player
+-> restore VideoTXL display state
+-> VideoTXL LocalPlaybackEnabled = true
+-> let VideoTXL reload/resync from its own synchronized state
+```
+
+Do not use `_TriggerPause` for local suspension; it changes synchronized pause state.
+
+Do not call raw VideoTXL internal `BaseVRCVideoPlayer.Stop()` as the integration contract.
+
+## VERIFIED VIDEOTXL 2.5.1 SOURCE EVIDENCE
 
 Stef supplied both official 2.5.1 archives:
 
-- `VideoTXL-2.5.1.zip` (full repository source archive)
-- `com.texelsaur.video-2.5.1.zip` (release package archive)
+- `VideoTXL-2.5.1.zip`
+- `com.texelsaur.video-2.5.1.zip`
 
-The following core files were compared byte-for-byte and are identical between the two archives:
+Core files compared byte-for-byte and confirmed identical include:
 
 - `SyncPlayer.cs`
 - `TXLVideoPlayer.cs`
@@ -123,133 +218,123 @@ The following core files were compared byte-for-byte and are identical between t
 - `SourceManager.cs`
 - `VideoManager.cs`
 
-Both archives report package version `2.5.1`.
+Relevant exact 2.5.1 facts retained for adapter work:
 
-For Presentation implementation decisions, use the 2.5.1 package/source behaviour as authoritative rather than current `main` / 2.6 beta behaviour.
+- `SyncPlayer.LocalPlaybackEnabled` has a local playback stop/start path;
+- `_TriggerPause()` is synchronized and therefore not a local-suspend substitute;
+- `ScreenManager` exposes current/capture texture information and texture overrides;
+- VideoTXL ultimately controls VRChat `BaseVRCVideoPlayer` backends;
+- 2.6.0-beta.2 keeps the main Presentation-relevant integration surface but introduces ownership/security changes and a newer CommonTXL requirement.
 
-## EXACT VIDEOTXL 2.5.1 SOURCE FINDINGS — 2026-09-05
+Keep Stef's Classroom on VideoTXL 2.5.1 for now.
 
-Official upstream source inspected at tag `2.5.1` in `vrctxl/VideoTXL`.
+## SUPERSEDED VIDEOTXL PLAYLIST DESIGN
 
-Confirmed facts relevant to the Presentation rebuild:
-
-- `Playlist._MoveTo(index)` is synchronized and changes the selected track index.
-- changing the playlist track triggers the source URL-ready path and therefore uses the existing SourceManager / SyncPlayer route;
-- `Playlist.CurrentIndex` is public read-only state and is suitable for identifying the active Presentation Slot;
-- `SyncPlayer._SetTargetTime(float)` is the synchronized seek route, but it only works while the player is in `VIDEO_STATE_PLAYING` and the source is seekable;
-- `SyncPlayer._TriggerPause()` synchronizes pause/unpause and also requires a playing, seekable source;
-- therefore selecting a Presentation Slot and immediately seeking/pausing in the same frame is unsafe; the Presentation controller needs to wait until the selected MP4 is actually playing + seekable before applying the initial slide seek/pause;
-- `Playlist.AutoAdvance = false` prevents normal video-end advancement to the next Presentation Slot;
-- SourceManager resets other sources when a Playlist becomes ready, which fits the existing single-player architecture;
-- the existing Classroom `TXLScreenAutoVisibility` explicitly supports `showWhenPaused`, so a paused Presentation slide can remain visible.
-
-Preferred V1 source layout after this inspection:
+Historical research previously concluded:
 
 ```text
-ONE VideoTXL Presentation Playlist/source
--> Track 0 = Presentation Slot 1
--> Track 1 = Presentation Slot 2
+ONE VideoTXL Presentation Playlist
+-> Track 0 = Slot 1
 ...
--> Track 9 = Presentation Slot 10
+-> Track 9 = Slot 10
 ```
 
-This is preferred over ten separate VideoTXL sources because it keeps one Presentation source inside the existing SourceManager and lets slot selection use the Playlist's synchronized track index.
+That was a valid design **only while VideoTXL was intended to be the Presentation playback/sync authority**.
 
-Important edge case for later testing:
+It is now superseded for the reusable product.
 
-`SyncPlayer._SetTargetTime(time)` contains special handling when the target is less than one second from the MP4 end. Therefore the final slide of a generated Presentation MP4 must be explicitly tested against the actual encoded duration; do not assume all encoded durations land on exact integer seconds.
+Do not create a new VideoTXL Presentation Playlist as the first implementation step.
 
-## USER-FACING V1 PREFAB CONTROLS
+The old exact findings about `Playlist._MoveTo`, `_SetTargetTime`, `_TriggerPause` and final-second behavior remain historical/source evidence and may still be useful when understanding VideoTXL, but they are not the new Core architecture.
 
-Target controls remain:
+## OTHER PLAYER SUPPORT
 
-- Slot 1 ... Slot 10 selection;
-- Previous slide;
-- Next slide;
-- First slide;
+V1 priority:
+
+1. standalone Core;
+2. VideoTXL typed adapter.
+
+Later only if useful:
+
+- ProTV: reduced capability may be possible; do not promise strict local hard-stop equivalence without proof;
+- USharpVideo: experimental/unsupported for strict suspension unless its public contract improves;
+- unknown players: configurable events/material routing may be offered for advanced users as best effort.
+
+Do not delay the standalone product for broad third-party compatibility.
+
+## USER-FACING V1 CONTROLS
+
+Target:
+
+- Presentation on/off;
+- Slot 1 ... Slot 10;
+- Previous;
+- Next;
+- First;
 - current slot label;
 - current slide / total slides;
-- pause presentation once seekable;
-- synchronized slot/slide state where needed for shared use;
 - no autoplay slideshow in V1.
 
 Optional later:
 
-- Last slide;
+- Last;
 - direct page entry;
 - autoplay/timer;
-- local pointer/laser;
-- configurable access filtering;
-- custom external URL entry;
+- pointer/laser;
+- custom access filtering;
+- external URL entry;
 - eBook reuse.
 
-## PRESENTATION MODE / BACK TO VIDEO
+## FIRST IMPLEMENTATION PROOF
 
-Preferred polished behaviour:
+Start outside the existing VideoTXL integration.
 
-```text
-normal VideoTXL video
--> enter Presentation Mode
--> remember previous source/context + approximate time + pause/play state
--> presentation uses same player/screen
--> Back to Video
--> restore previous source/time/play-pause state
-```
-
-For the current rebuild phase:
-
-- do not make Back to Video the first blocker;
-- first prove one Presentation Slot through the existing VideoTXL player/screen;
-- then prove Previous / Next / First and pause/seek;
-- treat exact source/time/play-pause restoration as a separate proof step;
-- do not create a second player just to avoid understanding VideoTXL state restoration.
-
-## PREFAB EXTRACTION / HARDENING ROUTE
-
-The next phase is:
-
-1. inspect the current Classroom hierarchy and the surviving VideoTXL/player/screen/tablet foundation;
-2. inventory any remaining Presentation-related GameObjects/components/scripts;
-3. record exact VideoTXL/playlist/screen/UI references;
-4. rebuild the smallest working Presentation path;
-5. prove Slot 1 first;
-6. prove Previous / Next / First and pause/seek;
-7. identify what is Classroom-specific;
-8. identify what belongs inside the reusable prefab;
-9. create the smallest reusable boundary;
-10. expose configuration cleanly in Inspector;
-11. prove multiplayer/sync/late join as applicable;
-12. prove Quest;
-13. only then call the prefab reusable.
-
-## FIRST NEXT-CHAT GATE
-
-Before writing or moving anything:
+Smallest proof:
 
 ```text
-Unity out of Play Mode
--> inspect current presentation hierarchy
--> inspect components/scripts/references
--> change nothing
+standalone test object
+-> one VRCUnityVideoPlayer
+-> one known direct Presentation MP4
+-> one dedicated test screen
+-> load
+-> seek first/middle/last slide
+-> pause
 ```
 
-This gate exists because the real scene is newer than the repository snapshot.
+Only after this works:
+
+- Next/Previous/First;
+- synced state;
+- late join;
+- Quest;
+- reusable prefab boundary;
+- VideoTXL adapter.
 
 ## TESTING ORDER
 
-After a reusable boundary exists:
-
-1. no-error Editor wiring check;
-2. Slot 1 demo;
-3. pause on intended first slide;
-4. Previous / Next / First;
-5. slot switching;
-6. Back to Video if part of current proven scope;
-7. uploaded VRChat PC;
+1. clean Unity compile/wiring;
+2. one direct MP4 Slot on dedicated screen;
+3. first/middle/last slide;
+4. repeated Previous / Next / First;
+5. rapid input during load/seek;
+6. slot switch and URL cooldown behavior;
+7. manual sync of mode/slot/slide/revision;
 8. second user;
 9. late join;
 10. Quest;
-11. package documentation.
+11. stop/cleanup on Presentation exit;
+12. VideoTXL 2.5.1 LocalPlaybackEnabled integration;
+13. VideoTXL existing-screen takeover/restore if chosen;
+14. only then evaluate snapshot performance optimization;
+15. package documentation.
+
+## RESEARCH MATERIAL
+
+Store the Work architecture report under:
+
+`docs/research/standalone-presentation-player/`
+
+Research findings are evidence. Accepted project choices live in `PRESENTATION_ARCHITECTURE_DECISION.md`.
 
 ## WORKING RULE
 
@@ -261,3 +346,7 @@ one tiny inspected change
 ```
 
 Stef receives complete scripts, never code fragments.
+
+Real Unity project:
+
+`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
