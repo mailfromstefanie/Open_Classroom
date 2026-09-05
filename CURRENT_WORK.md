@@ -4,9 +4,19 @@ Last updated: 2026-09-05 Europe/Amsterdam
 
 ## AUTHORITATIVE CURRENT STATUS
 
-**The StefanieInVR Presentation system in Open Classroom is now working end-to-end in the tested environment and is ready for beta use in the Classroom.**
+**Open Classroom currently has two important working tracks: the Presentation system is beta-ready, and the new multi-e-reader/library system has a ClientSim-working first implementation.**
 
-The earlier standalone-Core redesign and the Open Classroom VideoTXL 2.5.1 integration have both reached a working state.
+Presentation:
+- end-to-end current test pass complete;
+- late join proven;
+- VideoTXL adapter/restoration working.
+
+E-reader/library:
+- multi-book local playback architecture implemented;
+- ClientSim functionality working;
+- real headset handedness, real two-player proof and Quest profiling still open.
+
+The earlier standalone Presentation-Core redesign and the Open Classroom VideoTXL 2.5.1 integration have both reached a working state.
 
 Do not reopen solved architecture questions or old blockers unless new evidence appears.
 
