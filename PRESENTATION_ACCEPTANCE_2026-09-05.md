@@ -1,6 +1,6 @@
 # Presentation Acceptance Snapshot — 2026-09-05
 
-Status: **WORKING — FINAL LATE-JOIN TEST STILL OPEN**
+Status: **WORKING / BETA-READY — CURRENT TEST PASS COMPLETE**
 
 This file is the durable final handoff for the 2026-09-05 standalone Presentation + Open Classroom VideoTXL integration sprint.
 
@@ -72,11 +72,11 @@ Fix:
 
 Final result reported working.
 
-## Late join — NOT YET FINAL-PROVEN
+## Late join — PROVEN
 
-Late-join handling is deliberately designed around the synced semantic state, but the final real late-join test is still open.
+Stef completed the final late-join test successfully.
 
-Required contract to prove:
+Observed contract:
 
 ```text
 join while Presentation already active
@@ -87,7 +87,7 @@ join while Presentation already active
 -> do not overwrite authoritative state
 ```
 
-Stef reports that this is the only remaining Presentation-specific test.
+The late joiner reconstructed the active Presentation state correctly.
 
 ## VideoTXL restoration
 
@@ -173,13 +173,13 @@ Do not treat this as a two-video-player conflict.
 
 ## Backup / recovery
 
-Stef created a full backup of the complete working Unity project folder before final cleanup/handoff.
+Stef created a fresh full backup of the complete working Unity project folder after the final screen-size fix and successful late-join proof.
 
 GitHub remains durable project memory, but the tested Unity project can be newer than repo source snapshots.
 
 ## Remaining evidence boundary
 
-Everything currently tested by Stef is reported working. The late-join scenario itself is not yet final-proven.
+Everything in the current Open Classroom Presentation functional/multiplayer test pass, including late join, is reported working.
 
 A separate explicit Quest headset acceptance run is not documented in this chat. If a formal Quest release gate matters later, run and record that specific device proof instead of assuming it from PC/ClientSim evidence.
 
@@ -187,7 +187,7 @@ A separate explicit Quest headset acceptance run is not documented in this chat.
 
 ```text
 Presentation Service = LIVE
-Open Classroom Presentation = WORKING — FINAL LATE-JOIN TEST OPEN
+Open Classroom Presentation = WORKING / BETA-READY
 Reusable Presentation architecture = PROVEN IN CLASSROOM
 Art House Cinema Presentation integration = NEXT LATER TARGET
 ```
