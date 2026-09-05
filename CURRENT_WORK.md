@@ -22,7 +22,7 @@ Do not confuse it with the older checkout:
 
 The real tested Unity project remains the strongest source of truth for current scene wiring.
 
-Stef also made a full backup of the complete Unity project folder on 2026-09-05 before the final cleanup/fixes.
+Stef made a full backup of the complete Unity project folder on 2026-09-05, including a fresh backup after the final screen-size fix and successful late-join proof.
 
 ## FINAL ACCEPTED PRESENTATION ARCHITECTURE
 
@@ -98,21 +98,21 @@ Implementation rule:
 
 The several-second delay when re-entering Presentation is currently accepted because the Presentation player is actually stopped while inactive and must load the MP4 again. This keeps the design aligned with the Quest goal of not intentionally holding two active playback pipelines.
 
-## LATE JOIN — ONLY REMAINING PRESENTATION TEST
+## LATE JOIN — PROVEN
 
-Late-join support is designed into the synchronized semantic state, but Stef has **not yet run the final late-join proof**.
+Stef completed the final late-join test successfully.
 
-Required final test:
+Proven behavior:
 
 ```text
 Client 1 already in Presentation Mode on a later slide
 -> Client 2 joins afterward
--> Client 2 must automatically enter Presentation Mode
--> Client 2 must reconstruct the same slot + slide
--> Client 2 must not reset or mutate the authoritative state
+-> Client 2 automatically enters Presentation Mode
+-> Client 2 reconstructs the same slot + slide
+-> authoritative Presentation state is not reset
 ```
 
-This is now the only remaining Presentation-specific test gate reported by Stef.
+This closes the remaining Presentation-specific multiplayer test gate for the current Open Classroom implementation.
 
 ## VIDEOTXL 2.5.1 ADAPTER — WORKING
 
@@ -242,7 +242,7 @@ Reported working:
 - Presentation OFF/ON sync;
 - VideoTXL restore on both clients;
 - same Presentation slide restored after re-entry;
-- late join behavior: NOT YET FINAL-PROVEN;
+- late join behavior;
 - projector visibility behavior;
 - brightness/contrast behavior;
 - physical screen Presentation output;
@@ -265,13 +265,13 @@ Cross-project truth from `mailfromstefanie/StefanieInVR-Presentation-Service`:
 - current live uploader uses the proven slot-code flow;
 - prepared Username-only dashboard is not live.
 
-Open Classroom Presentation is functionally working in the tested setup; only the final late-join proof remains before calling the Presentation test pass fully closed.
+Open Classroom Presentation has completed the current functional/multiplayer test pass and is ready to enter beta use in the Classroom.
 
 ## CURRENT CROSS-PROJECT STATE
 
 ```text
 Presentation Service: LIVE
-Open Classroom Presentation: WORKING — FINAL LATE-JOIN TEST REMAINS
+Open Classroom Presentation: WORKING / BETA-READY
 Reusable Presentation architecture: PROVEN IN CLASSROOM IMPLEMENTATION; SELLABLE PREFAB PRODUCTIZATION STILL TO DO
 Art House Cinema Presentation integration: NOT YET DONE
 ```
