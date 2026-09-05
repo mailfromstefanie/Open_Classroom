@@ -9,44 +9,51 @@ Read in this order:
 1. `START_PROMPT.md`
 2. `AGENTS.md`
 3. `CURRENT_WORK.md`
-4. `PRESENTATION_ARCHITECTURE_DECISION.md`
-5. `PRESENTATION_INTEGRATION_PLAN.md`
-6. only the exact scripts/files relevant to the current task
+4. `PRESENTATION_ACCEPTANCE_2026-09-05.md`
+5. exact feature/architecture files only when needed
 
-The repository is project memory and backup/reference evidence from the real Unity scene. Do not assume GitHub scene state is newer than Stef's tested Unity scene unless `CURRENT_WORK.md` says so.
+The repository is durable project memory and backup/reference evidence from the real Unity scene.
 
-## Current active phase — 2026-09-05
+Do not assume a copied GitHub scene/script snapshot is newer than Stef's tested Unity project.
 
-The standalone Presentation Core is now implemented in the real Unity project and the Open Classroom VideoTXL 2.5.1 adapter is substantially working in ClientSim.
+## Current status — 2026-09-05
 
-Current order:
+**Open Classroom Presentation is working and beta-ready in the tested setup.**
+
+Current proven direction:
 
 ```text
-fix Presentation physical-screen fill/aspect
--> real multiplayer sync
--> late join / early-start
--> Quest
--> reusable prefab hardening
--> later Cinema integration
+standalone Presentation Core
+-> own VRCUnityVideoPlayer
+-> sync only mode + slot + slide + revision
+-> local load/seek/pause per client
+-> Open Classroom VideoTXL 2.5.1 adapter
+-> existing projector screen
 ```
 
-Preserve:
+Working behavior includes:
 
-- Core independence from VideoTXL;
-- sync only mode + slot + slide + revision;
-- local load/seek/pause per client;
-- existing projector visibility;
-- existing custom screen shader;
-- existing brightness/contrast controls.
+- 10 slots;
+- slide navigation;
+- two-client synchronization;
+- resume same slide after Presentation OFF/ON;
+- late join;
+- VideoTXL suspend/restore;
+- projector visibility;
+- brightness/contrast;
+- final physical-screen output;
+- Presentation UI integrated into the tablet.
 
-The old VideoTXL Presentation Playlist design remains superseded.
+The old VideoTXL Presentation Playlist architecture remains superseded.
 
-For exact current truth read `CURRENT_WORK.md`.
+Do not rebuild it.
 
-Detailed latest handoff:
+Detailed acceptance snapshot:
 
-`SESSION_HANDOFF_2026-09-05_PRESENTATION.md`
+`PRESENTATION_ACCEPTANCE_2026-09-05.md`
 
-Research material remains under:
+Real Unity project:
 
-`docs/research/standalone-presentation-player/`
+`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+
+Stef also made a full backup of the complete Unity project folder before the final working-state handoff.
