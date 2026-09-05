@@ -4,6 +4,8 @@ Last updated: 2026-08-27 (Europe/Amsterdam)
 
 Purpose: durable technical memory for the Open Classroom player setup and for reuse by other StefanieInVR worlds, especially Stefanie's Art House Cinema.
 
+> **Scope note — 2026-09-05:** This file remains authoritative reference for the existing Open Classroom VideoTXL 2.5.1 setup, playlist/privacy behavior, and future VideoTXL adapter work. It is **not** the architecture authority for the reusable Presentation prefab. The Presentation Core is now standalone; read `PRESENTATION_ARCHITECTURE_DECISION.md` for that decision.
+
 This file deliberately separates **proven facts**, **accepted project decisions**, and **future ideas that still require implementation/testing**.
 
 ---
