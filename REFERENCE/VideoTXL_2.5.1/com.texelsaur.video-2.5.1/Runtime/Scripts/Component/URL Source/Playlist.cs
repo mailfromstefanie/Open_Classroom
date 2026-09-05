@@ -1,0 +1,908 @@
+﻿
+using System;
+using System.Runtime.CompilerServices;
+using UdonSharp;
+using UnityEngine;
+using VRC.SDKBase;
+using VRC.Udon.Common;
+
+[assembly: InternalsVisibleTo("com.texelsaur.video.Editor")]
+
+namespace Texel
+{
+    [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
+    public class Playlist : VideoUrlSource
+    {
+        TXLVideoPlayer videoPlayer;
+
+        [Tooltip("Log debug statements to a world object")]
+        public DebugLog debugLog;
+        [Tooltip("Log debug statements to VRC log")]
+        public bool debugLogging = false;
+
+        [Tooltip("Shuffle track order on load")]
+        public bool shuffle;
+        [Tooltip("Automatically advance to next track when finished playing")]
+        public bool autoAdvance = true;
+        [Tooltip("Treat tracks as independent, unlinked entities.  Disables normal playlist controls.")]
+        public bool trackCatalogMode = false;
+        [Tooltip("When loading new playlist, immediately start playing first track even if another track is currently playing.")]
+        public bool immediate = false;
+        [Tooltip("Resume playing from the playlist after a manually loaded URL is finished.")]
+        public bool resumeAfterLoad = false;
+        [Tooltip("Allows currently playing track to be interrupted by sources, such as queues when a track is queued.")]
+        [SerializeField] internal bool interruptible = false;
+        [Tooltip("Selecting a track in a playlist UI will always add it to a queue if one is attached.")]
+        public bool selectShouldEnqueue = false;
+
+        [Tooltip("Optional catalog to sync load playlist data from")]
+        public PlaylistCatalog playlistCatalog;
+        [Tooltip("Default playlist track set")]
+        public PlaylistData playlistData;
+        [Tooltip("Optional queue playlist entries can be queued up on")]
+        public PlaylistQueue queue;
+
+        VRCUrl[] playlist;
+        VRCUrl[] questPlaylist;
+        string[] trackNames;
+
+        [UdonSynced, FieldChangeCallback(nameof(SyncSourceEnabled))]
+        bool syncEnabled = true;
+        [UdonSynced]
+        short syncCurrentIndex = -1;
+        [UdonSynced]
+        short syncCurrentIndexSerial = 0;
+        [UdonSynced]
+        short syncPlaylistSerial = 0;
+        [UdonSynced]
+        short[] syncTrackerOrder = new short[0];
+        [UdonSynced, FieldChangeCallback("ShuffleEnabled")]
+        bool syncShuffle;
+        [UdonSynced]
+        short syncShuffleSerial = 0;
+        [UdonSynced, FieldChangeCallback("CatalogueIndex")]
+        int syncCatalogueIndex = -1;
+        [UdonSynced, FieldChangeCallback("AutoAdvance")]
+        bool syncAutoAdvance = true;
+
+        short prevCurrentIndexSerial = 0;
+        short prevPlaylistSerial = 0;
+        short prevShuffleSerial = 0;
+        int queueIndex = -1;
+        int listChangeSerial = 0;
+        int trackChangeSerial = 0;
+
+        bool _initDeserialize = false;
+        bool _usingDebug = false;
+
+        [NonSerialized]
+        public int trackCount;
+
+        [Obsolete("Use VideoUrlSource.EVENT_OPTION_CHANGE")]
+        public new const int EVENT_OPTION_CHANGE = VideoUrlSource.EVENT_OPTION_CHANGE;
+        [Obsolete("Use VideoUrlSource.EVENT_BIND_VIDEOPLAYER")]
+        public new const int EVENT_BIND_VIDEOPLAYER = VideoUrlSource.EVENT_BIND_VIDEOPLAYER;
+
+        public const int EVENT_LIST_CHANGE = VideoUrlSource.EVENT_COUNT + 0;
+        public const int EVENT_TRACK_CHANGE = VideoUrlSource.EVENT_COUNT + 1;
+        public const int EVENT_CATALOG_INDEX_CHANGE = VideoUrlSource.EVENT_COUNT + 2;
+        protected new const int EVENT_COUNT = VideoUrlSource.EVENT_COUNT + 3;
+
+        protected override int EventCount => EVENT_COUNT;
+
+        private void Start()
+        {
+            _EnsureInit();
+        }
+
+        protected override void _Init()
+        {
+            base._Init();
+
+            _usingDebug = debugLogging || Utilities.IsValid(debugLog);
+            if (_usingDebug) DebugLog("Common initialization");
+
+            if (queue)
+                queueIndex = queue._RegisterPlaylistSource(this);
+
+            if (playlistData)
+            {
+                int catIndex = _CatalogIndexFromData(playlistData);
+                if (catIndex >= 0)
+                {
+                    syncCatalogueIndex = catIndex;
+                    _LoadSyncedCatalogIndex();
+                } else
+                    _LoadDataLow(playlistData);
+            }
+
+            if (Networking.IsOwner(gameObject))
+            {
+                syncShuffle = shuffle;
+                syncAutoAdvance = autoAdvance;
+                RequestSerialization();
+            }
+            else
+                SendCustomEventDelayedSeconds(nameof(_InitCheck), 5);
+        }
+
+        public void _MasterInit()
+        {
+            _EnsureInit();
+
+            if (_usingDebug) DebugLog("Master initialization");
+
+            if (videoPlayer && videoPlayer.SupportsOwnership)
+            {
+                if (!Networking.IsOwner(videoPlayer.gameObject))
+                    return;
+
+                if (!Networking.IsOwner(gameObject))
+                    Networking.SetOwner(Networking.LocalPlayer, gameObject);
+            }
+            else if (!Networking.IsOwner(gameObject))
+                return;
+
+            syncEnabled = sourceEnabled;
+
+            _PostLoadShuffle();
+            _IncrShuffleSerial();
+
+            _EventListChange();
+
+            _PostLoadTrack();
+
+            RequestSerialization();
+        }
+
+        public void _InitCheck()
+        {
+            if (!_initDeserialize)
+            {
+                if (_usingDebug) DebugLog("Deserialize not received in reasonable time");
+                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.Owner, "RequestOwnerSync");
+            }
+        }
+
+        public void RequestOwnerSync()
+        {
+            if (_usingDebug) DebugLog("RequestOwnerSync");
+            if (Networking.IsOwner(gameObject))
+                RequestSerialization();
+        }
+
+        public override void _SetVideoPlayer(TXLVideoPlayer videoPlayer)
+        {
+            this.videoPlayer = videoPlayer;
+            if (queue)
+                queue._SetVideoPlayer(videoPlayer);
+
+            _PopulateCatalog(playlistCatalog);
+            _PopulateInfo(playlistData);
+
+            _MasterInit();
+
+            _UpdateHandlers(VideoUrlSource.EVENT_BIND_VIDEOPLAYER);
+        }
+
+        public override string SourceDefaultName
+        {
+            get { return "PLAYLIST"; }
+        }
+
+        public override string TrackDisplay
+        {
+            get
+            {
+                if (IsInErrorRetry)
+                    return RetryTrackDisplay;
+
+                return IsReady ? $"TRACK: {CurrentIndex + 1} / {Count}" : "";
+            }
+        }
+
+        public override TXLVideoPlayer VideoPlayer
+        {
+            get { return videoPlayer; }
+        }
+
+        public override bool IsEnabled
+        {
+            get { return syncEnabled; }
+        }
+
+        public override bool IsValid
+        {
+            get { return syncEnabled && trackCount > 0; }
+        }
+
+        public override bool IsReady
+        {
+            get { return syncEnabled && syncCurrentIndex >= 0 && syncCurrentIndex < trackCount; }
+        }
+
+        public PlaylistQueue TargetQueue
+        {
+            get { return queue; }
+        }
+
+        public string ListName
+        {
+            get { return playlistData ? playlistData.playlistName : ""; }
+        }
+
+        public int ListChangeSerial
+        {
+            get { return listChangeSerial; }
+        }
+
+        public int TrackChangeSerial
+        {
+            get { return trackChangeSerial; }
+        }
+
+        public override bool _CanMoveNext()
+        {
+            if (trackCatalogMode || trackCount == 0)
+                return false;
+
+            if (_Repeats())
+                return CurrentIndex < trackCount;
+            else
+                return CurrentIndex < trackCount - 1;
+        }
+
+        public override bool _CanMovePrev()
+        {
+            if (trackCatalogMode || trackCount == 0)
+                return false;
+
+            return CurrentIndex > 0 || _Repeats();
+        }
+
+        public override bool _CanMoveTo(int index)
+        {
+            return index >= 0 && index < trackCount;
+        }
+
+        public void _LoadData(PlaylistData data)
+        {
+            //if (!_TakeControl())
+            //    return;
+
+            _PopulateInfo(data);
+            _LoadDataLow(data);
+
+            if (_usingDebug)
+            {
+                if (Utilities.IsValid(data))
+                    DebugLog($"Loading playlist data {data.playlistName}");
+                else
+                    DebugLog("Loading empty playlist data");
+            }
+
+            _EventListChange();
+        }
+
+        int _CatalogIndexFromData(PlaylistData data)
+        {
+            if (Utilities.IsValid(playlistCatalog) && playlistCatalog.PlaylistCount > 0)
+            {
+                for (int i = 0; i < playlistCatalog.playlists.Length; i++)
+                {
+                    if (playlistCatalog.playlists[i] == data)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+        public void _LoadFromCatalogueData(PlaylistData data)
+        {
+            if (!_TakeControl())
+                return;
+
+            SyncCatalogIndex = _CatalogIndexFromData(data);
+            _IncrPlaylistSerial();
+
+            _LoadSyncedCatalogIndex();
+            CurrentIndex = -1;
+
+            _PostLoadShuffle();
+            _EventListChange();
+
+            _PostLoadTrack();
+
+            RequestSerialization();
+        }
+
+        public void _LoadFromCatalogueIndex(int index)
+        {
+            if (!_TakeControl())
+                return;
+
+            if (!Utilities.IsValid(playlistCatalog) || playlistCatalog.PlaylistCount == 0)
+                index = -1;
+            if (index < 0 || index >= playlistCatalog.PlaylistCount)
+                index = -1;
+
+            SyncCatalogIndex = index;
+            _IncrPlaylistSerial();
+
+            _LoadSyncedCatalogIndex();
+            CurrentIndex = -1;
+
+            _PostLoadShuffle();
+            _EventListChange();
+
+            _PostLoadTrack();
+
+            RequestSerialization();
+        }
+
+        void _LoadDataLow(PlaylistData data)
+        {
+            if (_usingDebug) DebugLog($"LoadDataLow trackcount={(data && data.playlist != null ? data.playlist.Length : 0)}");
+            playlistData = data;
+
+            if (!Utilities.IsValid(data) || !Utilities.IsValid(data.playlist))
+            {
+                playlist = new VRCUrl[0];
+                questPlaylist = new VRCUrl[0];
+                trackNames = new string[0];
+            }
+            else
+            {
+                playlist = data.playlist;
+                questPlaylist = data.questPlaylist;
+                if (!Utilities.IsValid(questPlaylist) || questPlaylist.Length != playlist.Length)
+                    questPlaylist = new VRCUrl[data.playlist.Length];
+
+                trackNames = data.trackNames;
+                if (!Utilities.IsValid(trackNames) || trackNames.Length != playlist.Length)
+                    trackNames = new string[playlist.Length];
+            }
+
+            trackCount = playlist.Length;
+
+            for (int i = 0; i < trackCount; i++)
+            {
+                if (!Utilities.IsValid(playlist[i]))
+                    playlist[i] = VRCUrl.Empty;
+                if (!Utilities.IsValid(questPlaylist[i]))
+                    questPlaylist[i] = VRCUrl.Empty;
+                if (!Utilities.IsValid(trackNames[i]))
+                    trackNames[i] = $"Track {i + 1}";
+            }
+        }
+
+        void _PostLoadShuffle()
+        {
+            if (syncShuffle)
+            {
+                syncTrackerOrder = new short[trackCount];
+                _Shuffle();
+                _IncrShuffleSerial();
+            }
+            else
+                syncTrackerOrder = new short[0];
+        }
+
+        void _PostLoadTrack()
+        {
+            CurrentIndex = (short)((AutoAdvance && !trackCatalogMode && immediate) ? 0 : -1);
+            if (immediate)
+                _IncrCurrentIndexSerial();
+            else
+            {
+                if (videoPlayer && (videoPlayer.playerState == TXLVideoPlayer.VIDEO_STATE_PLAYING || videoPlayer.playerState == TXLVideoPlayer.VIDEO_STATE_LOADING))
+                    CurrentIndex = -1;
+                else
+                    _IncrCurrentIndexSerial();
+            }
+        }
+
+        public short Count
+        {
+            get { return (short)trackCount; }
+        }
+
+        public short CurrentIndex
+        {
+            get { return syncCurrentIndex; }
+            protected set
+            {
+                syncCurrentIndex = value;
+            }
+        }
+
+        protected short CurrentIndexSerial
+        {
+            get { return syncCurrentIndexSerial; }
+            set
+            {
+                errorCount = 0;
+                syncCurrentIndexSerial = value;
+                _EventTrackChange();
+
+                if (IsReady)
+                    _EventUrlReady();
+            }
+        }
+
+        internal bool SyncSourceEnabled
+        {
+            set
+            {
+                if (syncEnabled != value)
+                {
+                    syncEnabled = value;
+
+                    _UpdateHandlers(VideoUrlSource.EVENT_ENABLE_CHANGE);
+                }
+            }
+        }
+
+        public bool SourceEnabled
+        {
+            get { return syncEnabled; }
+            set
+            {
+                if (!_TakeControl())
+                    return;
+
+                if (_usingDebug) DebugLog($"Set playlist enabled {value}");
+
+                SyncSourceEnabled = value;
+                RequestSerialization();
+            }
+        }
+
+        public bool ShuffleEnabled
+        {
+            get { return syncShuffle; }
+            set
+            {
+                syncShuffle = value;
+                _UpdateHandlers(VideoUrlSource.EVENT_OPTION_CHANGE);
+            }
+        }
+
+        public PlaylistCatalog Catalog
+        {
+            get { return playlistCatalog; }
+        }
+
+        internal int SyncCatalogIndex
+        {
+            get { return syncCatalogueIndex; }
+            set
+            {
+                if (syncCatalogueIndex != value)
+                {
+                    syncCatalogueIndex = value;
+                    _UpdateHandlers(EVENT_CATALOG_INDEX_CHANGE);
+                }
+            }
+        }
+
+        public int CatalogueIndex
+        {
+            get { return syncCatalogueIndex; }
+        }
+
+        public override bool AutoAdvance
+        {
+            get { return syncAutoAdvance; }
+            set
+            {
+                syncAutoAdvance = value;
+                _UpdateHandlers(VideoUrlSource.EVENT_OPTION_CHANGE);
+            }
+        }
+
+        public override bool ResumeAfterLoad
+        {
+            get { return resumeAfterLoad; }
+        }
+
+        public override bool Interruptable
+        {
+            get { return interruptible; }
+        }
+
+        public override bool ResetOtherSources
+        {
+            get { return true; }
+        }
+
+        public override bool _MoveNext()
+        {
+            if (!syncEnabled || !_TakeControl())
+                return false;
+
+            if (!trackCatalogMode && CurrentIndex < trackCount - 1)
+                CurrentIndex += 1;
+            else if (!trackCatalogMode && _Repeats() && CurrentIndex <= trackCount)
+                CurrentIndex = 0;
+            else
+                CurrentIndex = (short)(trackCount + 1);
+
+            _IncrCurrentIndexSerial();
+
+            RequestSerialization();
+
+            bool result = CurrentIndex >= 0 && CurrentIndex < trackCount;
+            if (_usingDebug)
+            {
+                if (result)
+                    DebugLog($"Move next track {CurrentIndex}");
+                else
+                    DebugLog($"Playlist completed");
+            }
+
+            return result;
+        }
+
+        public override bool _MovePrev()
+        {
+            if (!syncEnabled || !_TakeControl())
+                return false;
+
+            bool onSource = videoPlayer && videoPlayer.currentUrlSource == this;
+
+            if (!trackCatalogMode && CurrentIndex >= 0)
+            {
+                if (onSource)
+                    CurrentIndex -= 1;
+            }
+            else if (!trackCatalogMode && _Repeats())
+                CurrentIndex = (short)(trackCount - 1);
+            else
+                CurrentIndex = (short)-1;
+
+            if (_usingDebug)
+            {
+                if (CurrentIndex >= 0)
+                    DebugLog($"Move previous track {CurrentIndex}");
+                else
+                    DebugLog($"Playlist reset");
+            }
+
+            _IncrCurrentIndexSerial();
+
+            RequestSerialization();
+
+            return CurrentIndex >= 0;
+        }
+
+        public override bool _MoveTo(int index)
+        {
+            if (!syncEnabled || !_TakeControl())
+                return false;
+
+            if (index < -1 || index >= trackCount)
+                return false;
+
+            CurrentIndex = (short)index;
+            _IncrCurrentIndexSerial();
+
+            if (_usingDebug)
+            {
+                if (CurrentIndex >= 0)
+                    DebugLog($"Move track to {CurrentIndex}");
+                else
+                    DebugLog($"Playlist reset");
+            }
+
+            RequestSerialization();
+
+            return CurrentIndex >= 0;
+        }
+
+        public bool _SelectTrack(int index)
+        {
+            if (selectShouldEnqueue)
+                return _Enqueue(index);
+
+            return _MoveTo(index);
+        }
+
+        public bool _SelectTrackFromCatalog(int catalogIndex, int index)
+        {
+            if (!Catalog)
+                return false;
+
+            if (selectShouldEnqueue)
+                return _SelectTrackFromCatalog(catalogIndex, index);
+
+            _LoadFromCatalogueIndex(catalogIndex);
+            if (CatalogueIndex != catalogIndex)
+                return false;
+
+            return _MoveTo(index);
+        }
+
+        public override void _ResetSource()
+        {
+            if (CurrentIndex == trackCount)
+                return;
+            if (!_TakeControl())
+                return;
+
+            CurrentIndex = (short)(trackCount + 1);
+            _IncrCurrentIndexSerial();
+
+            if (_usingDebug) DebugLog("Playlist complete");
+
+            RequestSerialization();
+        }
+
+        public override VRCUrl _GetCurrentUrl()
+        {
+            int index = _TrackIndex(CurrentIndex);
+            if (index < 0 || !syncEnabled)
+                return VRCUrl.Empty;
+
+            return playlist[index];
+        }
+
+        public override VRCUrl _GetCurrentQuestUrl()
+        {
+            int index = _TrackIndex(CurrentIndex);
+            if (index < 0 || !syncEnabled)
+                return VRCUrl.Empty;
+
+            return questPlaylist[index];
+        }
+
+        public VRCUrl _GetTrackURL(int index)
+        {
+            index = _TrackIndex(index);
+            if (index < 0)
+                return VRCUrl.Empty;
+
+            return playlist[index];
+        }
+
+        public VRCUrl _GetTrackQuestURL(int index)
+        {
+            index = _TrackIndex(index);
+            if (index < 0)
+                return VRCUrl.Empty;
+
+            return questPlaylist[index];
+        }
+
+        public string _GetTrackName(int index)
+        {
+            index = _TrackIndex(index);
+            if (index < 0)
+                return "";
+
+            return trackNames[index];
+        }
+
+        int _TrackIndex(int index)
+        {
+            if (index < 0 || index >= trackCount)
+                return -1;
+            if (syncTrackerOrder == null || syncTrackerOrder.Length == 0)
+                return index;
+
+            return syncTrackerOrder[index];
+        }
+
+        public bool _Enqueue(int index)
+        {
+            if (!queue || !queue._CanAddTrack())
+                return false;
+
+            index = _TrackIndex(index);
+            return queue._AddTrack(queueIndex, CatalogueIndex, index);
+        }
+
+        public bool _EnqueueFromCatalog(int catalogIndex, int index)
+        {
+            if (!queue || !queue._CanAddTrack() || !playlistCatalog)
+                return false;
+
+            PlaylistData data = playlistCatalog._GetPlaylist(catalogIndex);
+            if (!data)
+                return false;
+
+            if (index < 0 || index >= data.playlist.Length)
+                return false;
+
+            return queue._AddTrack(queueIndex, catalogIndex, index);
+        }
+
+        [Obsolete("Use PlaylistEnabled")]
+        public void _SetEnabled(bool state)
+        {
+            SourceEnabled = state;
+        }
+
+        public void _ToggleShuffle()
+        {
+            _SetShuffle(!syncShuffle);
+        }
+
+        public void _SetShuffle(bool state)
+        {
+            if (!_TakeControl())
+                return;
+
+            if (_usingDebug) DebugLog($"Set shuffle mode {state}");
+
+            bool listChange = state != ShuffleEnabled;
+
+            ShuffleEnabled = state;
+            if (syncShuffle)
+            {
+                _Shuffle();
+                listChange = true;
+            }
+
+            if (listChange)
+            {
+                _IncrShuffleSerial();
+                _EventListChange();
+            }
+
+            RequestSerialization();
+        }
+
+        public void _SetAutoAdvance(bool state)
+        {
+            if (!_TakeControl())
+                return;
+
+            if (_usingDebug) DebugLog($"Set auto advance {state}");
+
+            AutoAdvance = state;
+            RequestSerialization();
+        }
+
+        void _Shuffle()
+        {
+            if (_usingDebug) DebugLog("Shuffling track list");
+            int[] temp = new int[trackCount];
+            for (int i = 0; i < trackCount; i++)
+                temp[i] = i;
+
+            Utilities.ShuffleArray(temp);
+            if (syncTrackerOrder == null || syncTrackerOrder.Length != trackCount)
+                syncTrackerOrder = new short[trackCount];
+
+            for (int i = 0; i < trackCount; i++)
+                syncTrackerOrder[i] = (short)temp[i];
+        }
+
+        bool _TakeControl()
+        {
+            if (videoPlayer && videoPlayer.SupportsOwnership && !videoPlayer._CanTakeControl())
+                return false;
+
+            if (!Networking.IsOwner(gameObject))
+                Networking.SetOwner(Networking.LocalPlayer, gameObject);
+
+            return true;
+        }
+
+        bool _Repeats()
+        {
+            if (videoPlayer)
+                return videoPlayer.RepeatMode == TXLRepeatMode.All;
+
+            return false;
+        }
+
+        void _LoadSyncedCatalogIndex()
+        {
+            if (_usingDebug) DebugLog($"Load synced catalog index {syncCatalogueIndex}");
+
+            PlaylistData data = null;
+            if (playlistCatalog && syncCatalogueIndex >= 0 && syncCatalogueIndex < playlistCatalog.PlaylistCount)
+                data = playlistCatalog.playlists[syncCatalogueIndex];
+
+            _LoadDataLow(data);
+        }
+
+        void _PopulateCatalog(PlaylistCatalog catalog)
+        {
+            if (!catalog)
+                return;
+
+            foreach (PlaylistData list in catalog.playlists)
+                _PopulateInfo(list);
+        }
+
+        void _PopulateInfo(PlaylistData data)
+        {
+            if (!data || !videoPlayer || !videoPlayer.UrlInfoResolver)
+                return;
+
+            UrlInfoResolver resolver = videoPlayer.UrlInfoResolver;
+            for (int i = 0; i < data.playlist.Length; i++)
+            {
+                if (data.trackNames[i] != null && data.trackNames[i].Length > 0)
+                    resolver._AddInfo(data.playlist[i], data.trackNames[i]);
+            }
+        }
+
+        void _IncrPlaylistSerial()
+        {
+            syncPlaylistSerial += 1;
+            prevPlaylistSerial = syncPlaylistSerial;
+        }
+
+        void _IncrShuffleSerial()
+        {
+            syncShuffleSerial += 1;
+            prevShuffleSerial = syncShuffleSerial;
+        }
+
+        void _IncrCurrentIndexSerial()
+        {
+            CurrentIndexSerial += 1;
+            prevCurrentIndexSerial = syncCurrentIndexSerial;
+        }
+
+        public override void OnDeserialization(DeserializationResult result)
+        {
+            //DebugLog($"Deserialize playlist={syncPlaylistSerial}, shuffle={syncShuffleSerial}, currentIndex={syncCurrentIndexSerial}");
+            base.OnDeserialization(result);
+
+            bool listChange = false;
+
+            if (syncPlaylistSerial != prevPlaylistSerial)
+            {
+                prevPlaylistSerial = syncPlaylistSerial;
+                _LoadSyncedCatalogIndex();
+                listChange = true;
+            }
+
+            if (syncShuffleSerial != prevShuffleSerial)
+            {
+                prevShuffleSerial = syncShuffleSerial;
+                listChange = true;
+            }
+
+            if (listChange)
+                _EventListChange();
+
+            if (syncCurrentIndexSerial != prevCurrentIndexSerial)
+            {
+                prevCurrentIndexSerial = syncCurrentIndexSerial;
+                CurrentIndexSerial = syncCurrentIndexSerial;
+            }
+        }
+
+        protected void _EventTrackChange()
+        {
+            trackChangeSerial += 1;
+
+            if (sourceManager)
+                sourceManager._OnSourceTrackChange(sourceIndex);
+
+            _UpdateHandlers(EVENT_TRACK_CHANGE);
+        }
+
+        protected void _EventListChange()
+        {
+            listChangeSerial += 1;
+
+            _UpdateHandlers(EVENT_LIST_CHANGE);
+        }
+
+        void DebugLog(string message)
+        {
+            if (debugLogging)
+                Debug.Log("[VideoTXL:Playlist] " + message);
+            if (Utilities.IsValid(debugLog))
+                debugLog._Write("Playlist", message);
+        }
+    }
+}

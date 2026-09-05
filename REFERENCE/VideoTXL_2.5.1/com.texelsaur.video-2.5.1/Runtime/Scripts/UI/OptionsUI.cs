@@ -1,0 +1,433 @@
+﻿
+using UdonSharp;
+using UnityEngine;
+using UnityEngine.UI;
+using VRC.SDKBase;
+
+namespace Texel
+{
+    [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+    public class OptionsUI : UdonSharpBehaviour
+    {
+        public PlayerControls mainControls;
+        public TXLVideoPlayer videoPlayer;
+        public AudioManager audioManager;
+
+        public bool infoPanel = true;
+        public bool videoPanel = true;
+        public bool audioPanel = true;
+        public bool localOptionsOnly = false;
+
+        [Header("Internal")]
+        public GameObject optionsPanel;
+        public GameObject optionsInfoPanel;
+        public GameObject optionsVideoPanel;
+        public GameObject optionsAudioPanel;
+        public GameObject optionsInfoNav;
+        public GameObject optionsVideoNav;
+        public GameObject optionsAudioNav;
+        public GameObject optionsInfoNavActive;
+        public GameObject optionsVideoNavActive;
+        public GameObject optionsAudioNavActive;
+
+        public Dropdown videoModeDropdown;
+        public Dropdown videoFitDropdown;
+        public Dropdown videoResolutionDropdown;
+        public Dropdown videoLatencyDropdown;
+        public Dropdown audioProfileDropdown;
+
+        public Text infoMasterText;
+        public Text infoInstanceOwnerText;
+        public Text infoObjectOwnerText;
+        public InputField infoCurrentVideoInput;
+        public InputField infoLastVideoInput;
+        public Text infoCurrentVideoText;
+        public Text infoLastVideoText;
+        public Image infoPlayCurrentVideoImage;
+        public Image infoPlayLastVideoImage;
+        public InputField infoOffsetField;
+        public Text infoCurrentVideoPlayerText;
+
+        const int OPTIONS_TAB_NONE = 0;
+        const int OPTIONS_TAB_INFO = 1;
+        const int OPTIONS_TAB_VIDEO = 2;
+        const int OPTIONS_TAB_AUDIO = 3;
+
+        int optionsTabOpen = OPTIONS_TAB_NONE;
+        bool registeredVideo = false;
+        bool registeredAudio = false;
+        SyncPlayer syncPlayer;
+
+        Color normalColor = new Color(1f, 1f, 1f, .8f);
+        Color disabledColor = new Color(.5f, .5f, .5f, .4f);
+        Color activeColor = new Color(0f, 1f, .5f, .7f);
+        Color attentionColor = new Color(.9f, 0f, 0f, .5f);
+
+        void Start()
+        {
+            _SetControls(mainControls);
+
+            if (videoPlayer)
+                syncPlayer = videoPlayer.GetComponent<SyncPlayer>();
+
+            if (!infoPanel && optionsInfoNav)
+                optionsInfoNav.SetActive(false);
+            if (!videoPanel && optionsVideoNav)
+                optionsVideoNav.SetActive(false);
+            if (!audioPanel && optionsAudioNav)
+                optionsAudioNav.SetActive(false);
+
+            if (localOptionsOnly)
+            {
+                if (optionsInfoNav)
+                    optionsInfoNav.SetActive(false);
+                if (videoModeDropdown)
+                    videoModeDropdown.transform.parent.gameObject.SetActive(false);
+                if (videoFitDropdown)
+                    videoFitDropdown.transform.parent.gameObject.SetActive(false);
+            }
+
+            if (optionsInfoNav && !optionsInfoNav.activeSelf)
+                infoPanel = false;
+            if (optionsVideoNav && !optionsVideoNav.activeSelf)
+                videoPanel = false;
+            if (optionsAudioNav && !optionsAudioNav.activeSelf)
+                audioPanel = false;
+        }
+
+        public void _SetControls(PlayerControls controls)
+        {
+            mainControls = controls;
+
+            PlayerControls source = controls;
+            if (!source)
+                source = transform.GetComponentInParent<PlayerControls>();
+
+            if (source)
+            {
+                if (!videoPlayer)
+                    videoPlayer = source.videoPlayer;
+                if (!audioManager && videoPlayer)
+                    audioManager = source.videoPlayer.AudioManager;
+            } else
+            {
+                TXLVideoPlayer source2 = transform.GetComponentInParent<TXLVideoPlayer>();
+                if (source2)
+                {
+                    if (!videoPlayer)
+                        videoPlayer = source2;
+                    if (!audioManager)
+                        audioManager = source2.AudioManager;
+                }
+            }
+
+            _UpdateComponents();
+        }
+
+        void _UpdateComponents()
+        {
+            if (videoPlayer && !registeredVideo)
+            {
+                registeredVideo = true;
+                videoPlayer._Register(TXLVideoPlayer.EVENT_VIDEO_INFO_UPDATE, this, "_OnVideoInfoUpdate");
+                videoPlayer._Register(TXLVideoPlayer.EVENT_VIDEO_STATE_UPDATE, this, "_OnVideoStateUpdate");
+
+                VideoManager mux = videoPlayer.VideoManager;
+                if (mux)
+                {
+                    mux._Register(VideoManager.SETTINGS_CHANGE_EVENT, this, "_OnMuxSettingsChange");
+                    _OnMuxSettingsChange();
+                }
+            }
+
+            if (audioManager && !registeredAudio)
+            {
+                registeredAudio = true;
+                audioManager._Register(AudioManager.EVENT_CHANNEL_GROUP_CHANGED, this, "_OnChannelGroupChanged");
+            }
+        }
+
+
+
+        public void _HandleOptions()
+        {
+            if (optionsTabOpen == OPTIONS_TAB_NONE)
+            {
+                int tab = OPTIONS_TAB_NONE;
+                if (infoPanel)
+                    tab = OPTIONS_TAB_INFO;
+                else if (videoPanel)
+                    tab = OPTIONS_TAB_VIDEO;
+                else if (audioPanel)
+                    tab = OPTIONS_TAB_AUDIO;
+
+                _OpenOptionsTab(tab);
+                _OnVideoInfoUpdate();
+            }
+            else
+                _OpenOptionsTab(OPTIONS_TAB_NONE);
+        }
+
+        public void _HandleInfoTab()
+        {
+            _OpenOptionsTab(OPTIONS_TAB_INFO);
+        }
+
+        public void _HandleVideoTab()
+        {
+            _OpenOptionsTab(OPTIONS_TAB_VIDEO);
+        }
+
+        public void _HandleAudioTab()
+        {
+            _OpenOptionsTab(OPTIONS_TAB_AUDIO);
+        }
+
+        void _OpenOptionsTab(int tab)
+        {
+            optionsInfoPanel.SetActive(tab == OPTIONS_TAB_INFO);
+            optionsInfoNavActive.SetActive(tab == OPTIONS_TAB_INFO);
+            optionsVideoPanel.SetActive(tab == OPTIONS_TAB_VIDEO);
+            optionsVideoNavActive.SetActive(tab == OPTIONS_TAB_VIDEO);
+            optionsAudioPanel.SetActive(tab == OPTIONS_TAB_AUDIO);
+            optionsAudioNavActive.SetActive(tab == OPTIONS_TAB_AUDIO);
+            optionsPanel.SetActive(tab != OPTIONS_TAB_NONE);
+
+            optionsTabOpen = tab;
+        }
+
+        public void _OnMuxSettingsChange()
+        {
+            int latency = videoPlayer.VideoManager.Latency;
+            if (latency == VideoSource.LOW_LATENCY_ENABLE)
+                latency = 0;
+            else if (latency == VideoSource.LOW_LATENCY_DISABLE)
+                latency = 1;
+
+            //videoModeDropdown.SetValueWithoutNotify(videoPlayer.videoMux.VideoType);
+            if (videoLatencyDropdown)
+                videoLatencyDropdown.SetValueWithoutNotify(latency);
+            if (videoResolutionDropdown)
+                videoResolutionDropdown.SetValueWithoutNotify(videoPlayer.VideoManager.ResolutionIndex);
+        }
+
+        public void _OnVideoStateUpdate()
+        {
+            if (videoFitDropdown)
+                videoFitDropdown.SetValueWithoutNotify(videoPlayer.screenFit);
+            if (videoModeDropdown)
+                videoModeDropdown.SetValueWithoutNotify(videoPlayer.playerSourceOverride);
+            if (infoOffsetField && syncPlayer)
+                infoOffsetField.text = syncPlayer.LocalOffset.ToString();
+        }
+
+        // Info Panel
+
+        public void _OnVideoInfoUpdate()
+        {
+            if (!optionsInfoPanel.activeInHierarchy)
+                return;
+
+            bool canControl = videoPlayer._CanTakeControl();
+            bool enableControl = !videoPlayer.locked || canControl;
+
+            string currentUrl = videoPlayer.currentUrl.Get();
+            string lastUrl = videoPlayer.lastUrl.Get();
+
+            if (infoPlayCurrentVideoImage)
+                infoPlayCurrentVideoImage.color = (enableControl && currentUrl != "") ? normalColor : disabledColor;
+            if (infoPlayLastVideoImage)
+                infoPlayLastVideoImage.color = (enableControl && lastUrl != "") ? normalColor : disabledColor;
+
+            if (infoCurrentVideoText)
+            {
+                if (currentUrl != null && currentUrl.Length > 36)
+                    infoCurrentVideoText.text = currentUrl.Substring(0, 16) + "..." + currentUrl.Substring(currentUrl.Length - 16, 16);
+                else
+                    infoCurrentVideoText.text = currentUrl;
+            }
+
+            if (infoLastVideoText)
+            {
+                if (lastUrl != null && lastUrl.Length > 36)
+                    infoLastVideoText.text = lastUrl.Substring(0, 16) + "..." + lastUrl.Substring(lastUrl.Length - 16, 16);
+                else
+                    infoLastVideoText.text = lastUrl;
+            }
+
+            if (infoCurrentVideoPlayerText)
+                infoCurrentVideoPlayerText.text = $"Loaded by: {videoPlayer.currentUrlPlayerName}";
+
+            if (!videoPlayer.IsQuest)
+            {
+                if (infoCurrentVideoInput)
+                    infoCurrentVideoInput.text = currentUrl;
+                if (infoLastVideoInput)
+                    infoLastVideoInput.text = lastUrl;
+            }
+
+            if (mainControls)
+            {
+                if (infoInstanceOwnerText)
+                    infoInstanceOwnerText.text = mainControls.instanceOwner;
+                if (infoMasterText)
+                    infoMasterText.text = mainControls.instanceMaster;
+            }
+
+            if (infoObjectOwnerText)
+            {
+                VRCPlayerApi owner = Networking.GetOwner(videoPlayer.gameObject);
+                if (Utilities.IsValid(owner) && owner.IsValid())
+                    infoObjectOwnerText.text = owner.displayName;
+                else
+                    infoObjectOwnerText.text = "";
+            }
+
+        }
+
+        public void _HandlePlayCurrent()
+        {
+            if (!videoPlayer)
+                return;
+            if (videoPlayer.currentUrl == VRCUrl.Empty)
+                return;
+
+            if (videoPlayer._CanTakeControl())
+                videoPlayer._ChangeUrl(videoPlayer.currentUrl);
+            else if (mainControls)
+                mainControls._SetStatusOverride(mainControls._MakeOwnerMessage(), 3);
+        }
+
+        public void _HandlePlayLast()
+        {
+            if (!videoPlayer)
+                return;
+            if (videoPlayer.lastUrl == VRCUrl.Empty)
+                return;
+
+            if (videoPlayer._CanTakeControl())
+                videoPlayer._ChangeUrl(videoPlayer.lastUrl);
+            else if (mainControls)
+                mainControls._SetStatusOverride(mainControls._MakeOwnerMessage(), 3);
+        }
+
+        public void _HandleAddOffset()
+        {
+            if (!syncPlayer || !mainControls)
+                return;
+
+            syncPlayer.LocalOffset = syncPlayer.LocalOffset + mainControls.localOffsetIncrement;
+        }
+
+        public void _HandleSubOffset()
+        {
+            if (!syncPlayer || !mainControls)
+                return;
+
+            syncPlayer.LocalOffset = syncPlayer.LocalOffset - mainControls.localOffsetIncrement;
+        }
+
+        public void _HandleSetOffset()
+        {
+            if (!videoPlayer)
+                return;
+
+            if (float.TryParse(infoOffsetField.text, out float val))
+                syncPlayer.LocalOffset = val;
+        }
+
+        // Video Panel
+
+        public void _HandleModeChangedUI()
+        {
+            _UpdateSource((short)videoModeDropdown.value);
+        }
+
+        void _UpdateSource(short mode)
+        {
+            if (!videoPlayer)
+                return;
+
+            if (!videoPlayer._CanTakeControl())
+            {
+                if (mainControls)
+                    mainControls._SetStatusOverride(mainControls._MakeOwnerMessage(), 3);
+                return;
+            }
+
+            videoPlayer._SetSourceMode(mode);
+        }
+
+        public void _HandleLatencyChangedUI()
+        {
+            if (!videoPlayer)
+                return;
+
+            int mode = videoLatencyDropdown.value;
+            if (mode == 0)
+                mode = VideoSource.LOW_LATENCY_ENABLE;
+            else if (mode == 1)
+                mode = VideoSource.LOW_LATENCY_DISABLE;
+
+            videoPlayer._SetSourceLatency(mode);
+        }
+
+        public void _HandleScreenFitChangedUI()
+        {
+            if (!videoPlayer)
+                return;
+
+            if (!videoPlayer._CanTakeControl())
+            {
+                if (mainControls)
+                    mainControls._SetStatusOverride(mainControls._MakeOwnerMessage(), 3);
+                return;
+            }
+
+            videoPlayer._SetScreenFit((TXLScreenFit)videoFitDropdown.value);
+        }
+
+        public void _HandleResolutionChangedUI()
+        {
+            if (!videoPlayer)
+                return;
+
+            videoPlayer._SetSourceResolution(videoResolutionDropdown.value);
+        }
+
+        // Audio Panel
+
+        public void _OnChannelGroupChanged()
+        {
+            int channelGroup = 0;
+            for (int i = 0; i < audioManager.channelGroups.Length; i++)
+            {
+                if (audioManager.channelGroups[i] == audioManager.SelectedChannelGroup)
+                {
+                    channelGroup = i;
+                    break;
+                }
+            }
+
+            if (audioProfileDropdown)
+                audioProfileDropdown.SetValueWithoutNotify(channelGroup);
+        }
+
+        public void _HandleAudioProfileChangedUI()
+        {
+            _UpdateAudioProfile(audioProfileDropdown.value);
+        }
+
+        void _UpdateAudioProfile(int profile)
+        {
+            if (!audioManager)
+                return;
+
+            AudioChannelGroup[] groups = audioManager.channelGroups;
+            if (profile < 0 || profile >= groups.Length)
+                return;
+
+            audioManager._SelectChannelGroup(groups[profile]);
+        }
+    }
+}
