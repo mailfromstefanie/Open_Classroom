@@ -496,7 +496,7 @@ Final reported/proven result:
 - real two-client sync works;
 - cross-client slide control works;
 - Presentation OFF/ON restores the same Presentation slide;
-- late join works;
+- late join: FINAL TEST STILL OPEN;
 - VideoTXL local suspend/restore works;
 - existing physical screen reuse works;
 - projector visibility works;
@@ -506,7 +506,7 @@ Final reported/proven result:
 - Presentation UI is integrated into the physical tablet;
 - `PresentationCore` is organized under `UIs/Managers`.
 
-Do not continue following the old staged implementation/testing order as if these gates were still open.
+Most staged implementation gates are closed. The only remaining Presentation-specific proof is late join.
 
 Current authoritative acceptance snapshot:
 
