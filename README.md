@@ -9,8 +9,10 @@ Read in this order:
 1. `START_PROMPT.md`
 2. `AGENTS.md`
 3. `CURRENT_WORK.md`
-4. `PRESENTATION_ACCEPTANCE_2026-09-05.md`
-5. exact feature/architecture files only when needed
+4. `EREADER_LIBRARY_HANDOFF_2026-09-05.md` when e-reader/library work matters
+5. `PERFORMANCE_AUDIT_2026-09-05.md` before performance changes
+6. `PRESENTATION_ACCEPTANCE_2026-09-05.md`
+7. exact feature/architecture files only when needed
 
 The repository is durable project memory and backup/reference evidence from the real Unity scene.
 
@@ -57,3 +59,38 @@ Real Unity project:
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
 Stef made a fresh full backup of the complete Unity project folder after the final screen-size fix and successful late-join proof.
+
+
+## E-reader/library current status
+
+A first multi-book Classroom e-reader implementation now works in ClientSim:
+
+- one local shared e-reader video manager;
+- one VRCUnityVideoPlayer;
+- one shared RenderTexture;
+- multiple lightweight physical books;
+- kinematic Rigidbody + VRCObjectSync;
+- local page/bookmark/Keep Open state;
+- last-touched-wins;
+- inactive screens/player off;
+- compact page controls;
+- existing reset/toggle systems reused.
+
+Still open:
+- real headset left/right-hand comfort;
+- real two-player pickup + independent reading proof;
+- Quest profiling.
+
+Durable handoff:
+
+`EREADER_LIBRARY_HANDOFF_2026-09-05.md`
+
+Performance findings:
+
+`PERFORMANCE_AUDIT_2026-09-05.md`
+
+### Exact next session rule
+
+Before any performance optimization, Stef will first make a **fresh full backup of the current Unity project including the new e-reader implementation**.
+
+Do not optimize before that backup exists.
