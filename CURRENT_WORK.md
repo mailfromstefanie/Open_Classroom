@@ -68,6 +68,18 @@ receive shared state
 
 Do not synchronize continuous playback time for the normally paused presentation state.
 
+## CURRENT HIERARCHY CLEANUP — 2026-09-05
+
+Stef reorganized the real Unity hierarchy after the working sync/resume proof:
+
+- `PresentationCore` now sits under the scene `UIs/Managers` group;
+- the Presentation UI/canvas content was moved into the physical tablet structure;
+- the controls still work after this reorganization.
+
+Treat this as the preferred current scene organization.
+
+Important: `PresentationCore` is the GameObject carrying the Presentation controller/video-player responsibility; moving it under Managers is organizational only and does not change the accepted standalone Core architecture.
+
 ## CURRENT REAL UNITY IMPLEMENTATION
 
 The real scene now contains a working Presentation implementation, including:
