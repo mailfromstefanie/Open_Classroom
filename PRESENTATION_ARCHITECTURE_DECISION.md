@@ -2,13 +2,15 @@
 
 ## STATUS
 
-**ACCEPTED DIRECTION FOR V1**
+**ACCEPTED, IMPLEMENTED AND PROVEN IN OPEN CLASSROOM V1**
 
-The reusable StefanieInVR Presentation prefab will be **video-player independent at its Core**.
+The reusable StefanieInVR Presentation prefab is **video-player independent at its Core**.
 
-VideoTXL is no longer the playback authority for the reusable product. It remains an important optional integration, especially for Stef's own Open Classroom.
+VideoTXL is not the playback authority for the reusable product. It is implemented as an optional integration in Stef's own Open Classroom.
 
 This decision supersedes the earlier plan where a VideoTXL Presentation Playlist was the default prefab architecture.
+
+Implementation/acceptance evidence: `PRESENTATION_ACCEPTANCE_2026-09-05.md`.
 
 ## PRODUCT ARCHITECTURE
 
