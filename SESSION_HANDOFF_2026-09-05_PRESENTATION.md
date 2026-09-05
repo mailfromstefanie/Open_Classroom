@@ -27,7 +27,7 @@ Authoritative current files:
 - VideoTXL restores on both clients;
 - re-entering Presentation returns to the same saved slot/slide;
 - selecting another slot starts at slide 1;
-- late join works;
+- late join: FINAL TEST STILL OPEN;
 - same physical VideoTXL projector screen used for Presentation;
 - projector open/close preserved;
 - brightness/contrast preserved;
@@ -80,7 +80,7 @@ Stef created a full backup of the complete Unity project folder before final cle
 
 Everything currently discussed/tested by Stef is reported working.
 
-A formal Quest-headset acceptance run is not separately recorded in this chat.
+A formal Quest-headset acceptance run is not separately recorded in this chat. The final late-join proof is also still open.
 
 ## Cross-project next
 
