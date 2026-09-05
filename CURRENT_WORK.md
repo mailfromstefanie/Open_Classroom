@@ -284,33 +284,29 @@ Observed:
 
 This proves the current implementation's core shared Presentation state/hand-off path is functioning across two real test clients.
 
-### Newly observed resume bug
+### Resume behavior — FIXED AND PROVEN
 
-One behavior is still wrong:
+The re-entry behavior was corrected in the real Unity `PresentationController.cs`.
+
+Proven behavior:
 
 ```text
 Presentation active on a later slide
 -> Presentation OFF
 -> normal VideoTXL resumes correctly
 -> Presentation ON again
--> both clients return to slide 1 instead of the last Presentation slide
+-> both clients return to the same Presentation slot and same saved slide
 ```
 
-Desired behavior:
+Changing to a different slot still intentionally starts that newly selected slot at slide 1.
 
-```text
-Presentation OFF
--> preserve current selected slot + slideIndex
+Implementation rule now preserved:
 
-Presentation ON again
--> resume the same Presentation slot and same slide where the presenter stopped
-```
+- Presentation OFF does not reset synced `slotIndex` or `slideIndex`;
+- Presentation ON reuses the preserved state when it is valid;
+- selecting a different slot explicitly resets `slideIndex` to 0.
 
-Changing to a different slot may still intentionally start that newly selected slot at slide 1.
-
-Likely cause is current Presentation start/toggle logic resetting `slideIndex` to 0 when re-entering Presentation Mode. Confirm against the real Unity `PresentationController.cs` before editing.
-
-This resume fix is now a required behavior before final prefab hardening.
+The expected several-second delay when re-entering Presentation remains because the Presentation video is deliberately stopped while inactive and must be loaded again. This trade-off is currently accepted for V1 to avoid intentionally keeping both video playback pipelines active on Quest.
 
 ## AFTER SCREEN-FILL FIX — REQUIRED PROOF ORDER
 
