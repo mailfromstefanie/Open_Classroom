@@ -235,3 +235,15 @@ inspect
 → record proven result
 → continue only after proof
 ```
+
+## 2026-09-05 SCHEDULING NOTE — Presentation integration temporarily parked
+
+The Presentation prefab / Open Classroom integration remains the next Classroom implementation phase and its architecture stays valid.
+
+For 2026-09-05, Stef is intentionally doing two prerequisite/parallel product tasks first:
+
+1. clean and synchronize the public StefanieInVR website + translations with current project truth;
+2. build a small local Windows StefanieInVR Website Editor;
+3. then design the eReader/eBook system.
+
+Do not interpret this as cancelling or redesigning the Presentation prefab. Resume the existing `PRESENTATION_INTEGRATION_PLAN.md` afterward.
