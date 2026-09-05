@@ -1,10 +1,10 @@
-# Start Prompt — Open Classroom / Standalone Presentation Prefab
+# Start Prompt — Open Classroom / StefanieInVR Presentation Prefab
 
 Use this file to start the next fresh ChatGPT session.
 
 ## Project
 
-Primary repository:
+Primary implementation repository:
 
 `mailfromstefanie/Open_Classroom`
 
@@ -12,9 +12,13 @@ Related hosted service:
 
 `mailfromstefanie/StefanieInVR-Presentation-Service`
 
-Later target:
+Later integration target:
 
 `mailfromstefanie/Stefanies-Art-House-Cinema`
+
+Real Unity project:
+
+`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
 ## Read first
 
@@ -22,117 +26,206 @@ Later target:
 2. `CURRENT_WORK.md`
 3. `PRESENTATION_ARCHITECTURE_DECISION.md`
 4. `PRESENTATION_INTEGRATION_PLAN.md`
-5. `VIDEOTXL_2_5_1_FINDINGS.md` only when working on the VideoTXL adapter
-6. `REFERENCE/VideoTXL_2.5.1/README.md` and the exact package source when VideoTXL implementation details are needed
-7. Presentation Service `CURRENT_WORK.md` for hosted/live truth
+5. `VIDEOTXL_2_5_1_FINDINGS.md` only when VideoTXL details are needed
+6. `REFERENCE/VideoTXL_2.5.1/README.md` and the exact checked-in 2.5.1 package source when adapter details are needed
+7. Presentation Service `CURRENT_WORK.md` for hosted/live service truth
+8. Cinema `CURRENT_WORK.md` only when planning the later Cinema integration
 
-## Exact current truth
+## Exact current truth — 2026-09-05
 
-- Presentation Service Free Beta is live.
-- The previous Classroom Presentation integration has been dismantled.
-- Do not describe the current Classroom as beta-ready with the Presentation Service.
-- The reusable Presentation product is now intentionally **standalone and video-player independent at Core level**.
-- VideoTXL is no longer the default Presentation playback/sync authority.
-- The Core will use one own `VRCUnityVideoPlayer` in V1.
-- Default standalone display = own rollout Presentation Screen.
-- Optional existing Renderer/material output may be added.
-- Stef's own Classroom will later get a typed VideoTXL 2.5.1 integration.
-- The repository does not yet contain the standalone Presentation implementation.
+The standalone Presentation work is **past the initial local proof stage**.
 
-Real Unity project:
+Current real Unity implementation already includes:
 
-`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+- standalone Presentation Core with one own `VRCUnityVideoPlayer`;
+- ten slot URLs;
+- automatic slide count from MP4 duration;
+- First / Previous / Next / slot / start-stop controls;
+- synced state fields:
+  - `modeActive`
+  - `slotIndex`
+  - `slideIndex`
+  - `revision`
+- Presentation RenderTexture;
+- separate Open Classroom VideoTXL 2.5.1 adapter;
+- same existing physical VideoTXL screen used for Presentation;
+- existing projector open/close behavior preserved;
+- existing custom screen shader preserved;
+- existing brightness/contrast controls preserved.
 
-## Accepted architecture
+The old VideoTXL Presentation Playlist design remains superseded.
 
-Shared state only:
+Do **not** recreate it.
 
-```text
-modeActive
-slotIndex
-slideIndex
-revision
-```
+## Important fixed VideoTXL problem
 
-All clients handle playback locally:
+The normal VideoTXL playlists temporarily stopped because `SourceManager.sources` still contained one null entry left by the deleted old Presentation playlist.
 
-```text
-receive state
--> load selected slot if needed
--> seek locally
--> pause locally
-```
+That stale null source was removed.
 
-No continuous video-time sync is required for normal slide holding.
+Current reported scene truth:
 
-V1 same-slot navigation:
+- SourceManager has 21 valid sources;
+- ordinary VideoTXL playlists initialize again;
+- `LocalPlaybackEnabled` is normally true.
 
-```text
-load MP4 once
--> seek
--> pause
--> Next / Previous / First = local seek again
-```
+This was not a conflict between the standalone Presentation player and VideoTXL.
 
-Do not make snapshot-and-stop the default. Snapshot is only a later performance experiment if Quest testing demonstrates a need.
+Do not reopen this diagnosis without new evidence.
 
-## Quest rule
+## Current VideoTXL adapter behavior
 
-Try to keep only one playback pipeline intentionally active at a time.
-
-Standalone product must not blindly stop unknown third-party internal video components.
-
-For Stef's VideoTXL Classroom integration, use the exact checked-in 2.5.1 reference at:
-
-`REFERENCE/VideoTXL_2.5.1/com.texelsaur.video-2.5.1/`
-
-Preferred suspension path:
-
-`SyncPlayer.LocalPlaybackEnabled = false`
-
-while Presentation Mode is active, then restore it to `true` after the Presentation player stops and the screen state is restored.
-
-## First implementation goal
-
-Do **not** start by creating a VideoTXL Presentation Playlist.
-
-Build the smallest standalone proof first:
+Normal mode:
 
 ```text
-one standalone VRCUnityVideoPlayer
--> one known direct Presentation MP4
--> one dedicated test screen
--> load
--> seek first/middle/last slide
--> pause
+Presentation OFF
+-> normal VideoTXL playback
+-> existing physical screen
+-> existing projector visibility
+-> existing custom shader
+-> existing brightness/contrast
 ```
 
-Then:
+Presentation mode:
 
-- Next / Previous / First;
-- sync mode/slot/slide/revision;
-- second client / late join;
-- Quest;
-- prefab hardening;
-- only then VideoTXL 2.5.1 integration into Open Classroom.
+```text
+Presentation ON
+-> locally set SyncPlayer.LocalPlaybackEnabled = false
+-> do not change VideoTXL shared pause/play state
+-> standalone Presentation player loads/seeks/pauses locally
+-> Presentation output -> RT_PresentationVideo
+-> VideoTXL ScreenManager override -> same physical screen
+-> existing screen shader stays final output
+```
+
+Exit:
+
+```text
+Presentation OFF
+-> stop/leave Presentation playback
+-> restore previous VideoTXL screen override state
+-> LocalPlaybackEnabled = true
+-> VideoTXL restores/resyncs through its own logic
+```
+
+Never use `_TriggerPause()` as the local suspend mechanism.
+Never treat raw internal `BaseVRCVideoPlayer.Stop()` as the integration contract.
+
+## Existing Classroom systems that must survive every fix
+
+### TXLScreenAutoVisibility
+
+Preserve:
+
+- projector-screen blendshape/open gate;
+- physical screen Renderer;
+- screen colliders;
+- normal VideoTXL visibility rules;
+- Presentation visibility while VideoTXL is locally suspended.
+
+### Custom screen shader / readability
+
+Preserve the existing physical screen material/shader pipeline.
+
+`ScreenReadabilityManager` brightness/contrast must continue to affect:
+
+- normal VideoTXL;
+- Presentation.
+
+Do not solve display problems by replacing the physical screen material or bypassing the readability system.
+
+## ClientSim proof already reported
+
+Do not spend a fresh chat re-proving all of this unless a new change touches it:
+
+- normal VideoTXL works outside Presentation Mode;
+- Presentation locally suspends VideoTXL;
+- Presentation appears on the existing physical screen;
+- projector close/open still controls renderer/collider;
+- brightness/contrast affect Presentation;
+- readability Reset restores values;
+- First / Previous / Next work;
+- one Presentation reported 15 slides;
+- Stop restores VideoTXL and `LocalPlaybackEnabled=true`;
+- no new Presentation compile/runtime errors after render-mode correction.
+
+ClientSim does not equal final multiplayer/Quest proof.
+
+## CURRENT BLOCKER — FIX THIS FIRST
+
+The Presentation is visible on the correct physical VideoTXL screen, but it **does not fill the whole intended screen area**.
+
+Already-known evidence:
+
+- inspected hosted Slot 1 MP4 = 1280x720 = 16:9;
+- inspected `RT_PresentationVideo` = 1920x1080 = 16:9;
+- inspected MP4 itself does not contain the unwanted outer margins;
+- therefore do not start by changing the PDF->MP4 converter;
+- VRCUnityVideoPlayer Aspect Ratio dropdown choices are not assumed to solve it because Presentation is now routed through RenderTexture + VideoTXL ScreenManager.
+
+Fresh-chat investigation target:
+
+- actual `VideoTXLPresentationAdapter`;
+- real VideoTXL `ScreenManager`;
+- real physical screen material/shader;
+- VideoTXL property mapping such as `_FitMode` and `_TexAspectRatio`;
+- difference between normal VideoTXL display state and Presentation override state.
+
+Goal:
+
+**make the 16:9 Presentation fill the intended physical screen correctly while preserving normal VideoTXL, projector visibility, shader, brightness/contrast and correct restoration on exit.**
+
+Choose the safest technical implementation after inspecting the actual Unity wiring.
+
+## After the screen-fill fix
+
+Do real Build & Test with at least two clients.
+
+Prove:
+
+1. Client 1 starts Presentation.
+2. Client 1 selects a slot and changes slides.
+3. Client 2 reconstructs the same `modeActive`, `slotIndex`, `slideIndex`, `revision`.
+4. Client 2 can press Previous and Client 1 follows.
+5. Stop restores normal local VideoTXL on both.
+6. Late joiner reconstructs an already-running Presentation.
+7. One deliberately early Presentation start after join does not break the VideoTXL adapter.
+8. Then prove Quest versus PC.
+
+## Hosted service truth
+
+Presentation Service Free Beta is live.
+
+- 10 stable slot MP4s;
+- PDF input;
+- one slide = one second;
+- current live uploader still uses slot codes;
+- Slot 1 is the public demo;
+- Username-only personal dashboard is prepared but not live.
+
+The current physical-screen-fill issue is not presently evidence of a hosted converter problem.
 
 ## How to work with Stef
 
 - Speak Dutch.
-- One tiny Unity action at a time.
-- Explain what the action is meant to prove.
-- Stef performs Unity scene work manually.
-- Give full replacement scripts when code is needed; never snippets.
-- No CMD/PowerShell unless unavoidable.
-- Do not make destructive scene changes without inspection.
-- Update GitHub after meaningful decisions or proof.
+- Stef wants to build quickly; do not force a test after every tiny object.
+- Use tests only at meaningful risk gates.
+- Explain the purpose of a change in simple language.
+- Give complete replacement scripts, never fragments.
+- Avoid destructive scene changes before inspection.
+- Avoid CMD/PowerShell unless it materially helps.
+- Codex/Sol may be used as a bounded Unity worker when direct scene inspection is useful, but normal ChatGPT/Nova remains the orchestrator.
+- Update GitHub after meaningful proof/decisions.
 
-## Research material
+## Current order
 
-The Work architecture report belongs in:
+```text
+fix screen fill/aspect
+-> real multiplayer sync
+-> late join / early-start proof
+-> Quest
+-> reusable prefab hardening
+-> later Cinema integration
+```
 
-`docs/research/standalone-presentation-player/`
-
-Treat research as evidence, not automatically accepted truth. The accepted decision is in `PRESENTATION_ARCHITECTURE_DECISION.md`.
-
-Do not start Website Editor, eReader or Cinema implementation unless Stef explicitly changes priority.
+Do not start Website Editor, eReader/eBook or Cinema implementation unless Stef explicitly changes priority.
