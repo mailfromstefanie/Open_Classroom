@@ -439,3 +439,24 @@ Real project changes include:
 Old `LocalEReader.cs` / orphaned `LocalEReader.asset` were removed.
 
 The tested real Unity project remains authoritative until these local changes are deliberately mirrored/committed as source snapshots.
+
+
+## PERFORMANCE AUDIT — 2026-09-05
+
+A targeted read-only performance analysis was completed after the e-reader work.
+
+Current important findings:
+
+- idle desktop ClientSim CPU/Udon/UI/geometry costs are low;
+- e-reader and VideoTXL Quest RenderTextures currently use 2x MSAA + automatic mipmaps and are candidates for focused optimization;
+- large transparent Graphlit glass is the main likely Quest fill-rate risk;
+- three NPOT posters account for about 69 MB reported uncompressed PC texture memory;
+- `M_EReaderScreen.mat` has a suspicious emission reference to `VideoTXLCRT-Quest`;
+- no performance changes were applied during the audit;
+- scene was left clean, out of Play Mode, with no errors.
+
+Read before performance changes:
+
+`PERFORMANCE_AUDIT_2026-09-05.md`
+
+Optimization order is deliberately conservative: e-reader material -> e-reader RT -> VideoTXL RT -> real Quest evidence -> only then glass/material redesign.
