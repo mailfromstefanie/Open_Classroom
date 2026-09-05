@@ -2,11 +2,15 @@
 
 This folder is reserved for architecture/research material supporting the standalone StefanieInVR Presentation prefab.
 
-## Upload target
+## Research report present
 
-Upload the completed Work report here, preferably with this filename:
+The completed Work research report is stored here:
 
-`Standalone_VRChat_Presentation_Player_Architecture_Decision_2026-09-05.docx`
+`Standalone_VRChat_Presentation_Player_Architecture_Decision.docx`
+
+Git blob SHA at verification on 2026-09-05:
+
+`12f6b5c4c0b4999c409038405bfa0a32aa9d8f54`
 
 The report is research evidence, not automatic project truth. Accepted implementation decisions are recorded separately in:
 
