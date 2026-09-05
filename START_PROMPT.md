@@ -24,13 +24,15 @@ Real Unity project:
 
 1. `AGENTS.md`
 2. `CURRENT_WORK.md`
-3. `PRESENTATION_ACCEPTANCE_2026-09-05.md`
-4. `PRESENTATION_ARCHITECTURE_DECISION.md`
-5. `PRESENTATION_INTEGRATION_PLAN.md`
-6. `VIDEOTXL_2_5_1_FINDINGS.md` only when VideoTXL internals are relevant
-7. exact VideoTXL 2.5.1 checked-in source only when implementation details are needed
-8. Presentation Service `CURRENT_WORK.md` for hosted/live truth
-9. Cinema `CURRENT_WORK.md` only when deliberately moving to Cinema
+3. `EREADER_LIBRARY_HANDOFF_2026-09-05.md` when e-reader/library work matters
+4. `PERFORMANCE_AUDIT_2026-09-05.md` before performance changes
+5. `PRESENTATION_ACCEPTANCE_2026-09-05.md`
+6. `PRESENTATION_ARCHITECTURE_DECISION.md`
+7. `PRESENTATION_INTEGRATION_PLAN.md`
+8. `VIDEOTXL_2_5_1_FINDINGS.md` only when VideoTXL internals are relevant
+9. exact VideoTXL 2.5.1 checked-in source only when implementation details are needed
+10. Presentation Service `CURRENT_WORK.md` for hosted/live truth
+11. Cinema `CURRENT_WORK.md` only when deliberately moving to Cinema
 
 ## Exact current truth
 
@@ -169,3 +171,34 @@ Read `CURRENT_WORK.md` for exact current e-reader status before making changes.
 - complete scripts only, never fragments;
 - inspect the real Unity scene before changing working systems;
 - GitHub is project memory, but tested Unity scene truth can be newer.
+
+
+## Exact next action for e-reader/performance
+
+The current multi-e-reader implementation works in ClientSim and the scene was left clean/out of Play Mode after a read-only performance audit.
+
+**Do not start optimization immediately.**
+
+First action next session:
+
+```text
+make a fresh full backup of
+E:/Projects/Open_Classroom/#Unity/Open_Classroom
+including the new e-reader implementation
+```
+
+Only after that backup:
+
+1. verify/fix the suspicious `M_EReaderScreen.mat` emission reference;
+2. test `RT_EReader` at 1x MSAA with automatic mipmaps OFF;
+3. validate e-reader;
+4. test `VideoTXLCRT-Quest` at 1x MSAA with automatic mipmaps OFF;
+5. validate VideoTXL and Presentation restore;
+6. stop.
+
+Do not touch transparent glass, NPOT posters or `RT_PresentationVideo` in the same round.
+
+E-reader acceptance still requires:
+- real headset hand comfort;
+- real two-player pickup + independent reading;
+- Quest device profiling.
