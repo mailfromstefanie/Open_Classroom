@@ -356,3 +356,126 @@ Stef receives complete scripts, never code fragments.
 Real Unity project:
 
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+
+## IMPLEMENTATION UPDATE — 2026-09-05
+
+The plan above remains the architectural baseline, but implementation has now progressed beyond the earlier proof order.
+
+### Real Unity implementation now present
+
+The real Open Classroom Unity scene now has:
+
+- standalone Presentation Core;
+- one own `VRCUnityVideoPlayer`;
+- 10 stable configured slot URLs;
+- automatic slide count from MP4 duration;
+- Presentation controls and feedback;
+- synced semantic state fields;
+- `RT_PresentationVideo` RenderTexture output;
+- separate Open Classroom `VideoTXLPresentationAdapter`;
+- existing physical VideoTXL screen reuse.
+
+### VideoTXL SourceManager incident — resolved
+
+A stale null source remained in `SourceManager.sources` after the old Presentation playlist was deleted.
+
+That null source stopped VideoTXL SourceManager startup and made all normal playlists fail.
+
+The single null entry was removed.
+
+Current reported state:
+
+- 21 valid sources;
+- normal VideoTXL playlists initialize again;
+- no VideoTXL source-code redesign was needed.
+
+This is closed unless new evidence appears.
+
+### Adapter implementation chosen
+
+Open Classroom-specific adapter behavior now follows the previously preferred architecture:
+
+```text
+ENTER PRESENTATION
+-> locally set SyncPlayer.LocalPlaybackEnabled = false
+-> keep VideoTXL shared pause/play state untouched
+-> Presentation VRCUnityVideoPlayer renders into RT_PresentationVideo
+-> VideoTXL 2.5.1 ScreenManager texture override places that texture on the existing physical screen
+
+EXIT PRESENTATION
+-> stop/leave Presentation playback
+-> restore prior VideoTXL ScreenManager texture override state
+-> set LocalPlaybackEnabled = true
+-> allow VideoTXL to restore/resync normally
+```
+
+The reusable Core remains independent from VideoTXL.
+
+### Existing Classroom display systems preserved
+
+The adapter must continue respecting:
+
+- `TXLScreenAutoVisibility` projector blendshape/open gate;
+- physical screen renderer and colliders;
+- existing custom VideoTXL/Unlit-based screen material/shader;
+- `ScreenReadabilityManager` brightness/contrast controls.
+
+ClientSim already proved the projector visibility and brightness/contrast systems still work while Presentation is displayed.
+
+Do not replace those systems merely to simplify Presentation output.
+
+### ClientSim evidence now available
+
+Reported PASS:
+
+- normal VideoTXL works outside Presentation Mode;
+- Presentation locally suspends VideoTXL;
+- Presentation appears on existing physical TXL screen;
+- projector open/close controls renderer + collider;
+- brightness/contrast affect Presentation;
+- readability Reset works;
+- First / Previous / Next work;
+- 15-slide duration was detected;
+- Stop restores VideoTXL and `LocalPlaybackEnabled=true`;
+- no new Presentation compile/runtime errors after render-mode correction.
+
+### Current open blocker: physical-screen fill/aspect
+
+Presentation content is visible but does not fill the intended whole physical screen.
+
+Known evidence:
+
+- inspected Slot 1 MP4 = 1280x720, 16:9, 15 seconds;
+- inspected `RT_PresentationVideo` = 1920x1080, 16:9;
+- inspected MP4 does not contain the unwanted outer margins.
+
+Therefore the next investigation belongs to the adapter / VideoTXL ScreenManager / custom shader fit-aspect pipeline, not the hosted converter.
+
+Inspect especially:
+
+- `VideoTXLPresentationAdapter`;
+- ScreenManager texture override state;
+- ScreenManager screen-fit state;
+- physical screen material property mapping;
+- `_FitMode`;
+- `_TexAspectRatio`;
+- restore behavior on Presentation exit.
+
+Goal:
+
+**Presentation fills the intended physical screen while the existing shader, readability controls, projector visibility and normal VideoTXL restoration remain unchanged.**
+
+### Updated remaining acceptance order
+
+```text
+1. fix physical-screen fit/aspect
+2. real two-client Build & Test for mode/slot/slide/revision
+3. prove cross-client control/ownership
+4. late join reconstruction
+5. early-start-after-join adapter safety
+6. Quest/PC decode + seek + display + suspend/restore proof
+7. reusable prefab hardening/documentation
+8. later Cinema integration
+```
+
+Do not claim multiplayer or Quest acceptance from ClientSim.
