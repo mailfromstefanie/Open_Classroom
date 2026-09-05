@@ -272,13 +272,26 @@ Open Classroom Presentation is functionally working in the tested setup; only th
 ```text
 Presentation Service: LIVE
 Open Classroom Presentation: WORKING — FINAL LATE-JOIN TEST REMAINS
-Reusable Presentation architecture: PROVEN IN CLASSROOM
+Reusable Presentation architecture: PROVEN IN CLASSROOM IMPLEMENTATION; SELLABLE PREFAB PRODUCTIZATION STILL TO DO
 Art House Cinema Presentation integration: NOT YET DONE
 ```
 
-The next broad product target can be Art House Cinema when Stef explicitly resumes that project.
+The next Presentation product phase after beta testing is **not Cinema yet**.
 
-Cinema keeps its own previously accepted control/menu/reset/admin return route; do not skip that foundation just because the Presentation product is now ready.
+Required order:
+
+```text
+finish beta test phase
+-> harden/clean the reusable Presentation package
+-> create the actual distributable/sellable prefab
+-> remove Classroom-specific assumptions from the sale package
+-> provide creator-facing setup/configuration
+-> package documentation + install/setup instructions
+-> version/release the commercial/free product package
+-> only then treat the prefab as a finished product for external customers
+```
+
+Art House Cinema is a later integration target for the proven product and keeps its own control/menu/reset/admin return route.
 
 ## WORKING STYLE WITH STEF
 
