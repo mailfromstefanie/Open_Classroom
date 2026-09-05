@@ -56,4 +56,4 @@ Real Unity project:
 
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
-Stef also made a full backup of the complete Unity project folder before the final working-state handoff.
+Stef made a fresh full backup of the complete Unity project folder after the final screen-size fix and successful late-join proof.
