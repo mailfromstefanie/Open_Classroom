@@ -481,6 +481,31 @@ Goal:
 Do not claim multiplayer or Quest acceptance from ClientSim.
 
 
+## PRODUCTIZATION AFTER BETA
+
+Important distinction:
+
+```text
+working Open Classroom implementation
+!= finished sellable prefab
+```
+
+After the beta-test phase, build the actual reusable distribution product.
+
+Required productization work includes:
+
+- extract/confirm a clean standalone prefab boundary;
+- remove Classroom-only references/scene assumptions from the customer package;
+- keep VideoTXL as an optional adapter rather than a Core dependency;
+- provide a clean default display/screen path;
+- expose creator-friendly slot/configuration fields;
+- verify fresh-import/install behavior in a clean project;
+- document setup, slot URLs, controls, sync model and optional VideoTXL integration;
+- prepare versioned release/package structure suitable for sale/distribution;
+- run final product regression before release.
+
+Do not call the Open Classroom scene implementation itself the finished commercial prefab.
+
 ## FINAL IMPLEMENTATION STATUS — 2026-09-05
 
 The implementation described by this plan has now reached a working state in the real Open Classroom Unity project.
