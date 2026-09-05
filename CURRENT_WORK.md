@@ -1,14 +1,16 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-04 (Europe/Amsterdam)
+Last updated: 2026-09-05 (Europe/Amsterdam)
 
-## ACTIVE TASK
+## CURRENT STATUS
 
-**VRCHAT PRESENTATION PREFAB / CLASSROOM INTEGRATION — ACTIVE ▶️**
+**Presentation prefab / Classroom integration is designed and ready to resume, but temporarily parked while Stef finishes website baseline work, the local Website Editor, and then eReader/eBook design.**
 
-The hosted Presentation Service Milestone 4 has passed production acceptance. Open Classroom is now the active integration project.
+This is a scheduling pause only. The Presentation architecture is not cancelled or reset.
 
-Architecture locked for the first proof:
+## PRESERVED PRESENTATION ARCHITECTURE
+
+First proof:
 
 ```text
 10 stable Presentation Slot MP4s
@@ -16,234 +18,113 @@ Architecture locked for the first proof:
 -> PresentationController
 -> existing VideoTXL SyncPlayer
 -> existing projector/screen
--> Previous / Next seek one second per slide
+-> one slide = one second
+-> Previous / Next seek by one second
 ```
 
-Do not create a second video player yet. Reuse the current VideoTXL 2.5.1 player and screen.
+Do not create a second video player unless the existing VideoTXL route fails in real testing.
 
-Read `PRESENTATION_INTEGRATION_PLAN.md` before making scene changes.
+Polished Presentation Mode must also support:
 
-### Exact next action
+```text
+normal video
+-> enter Presentation Mode
+-> remember previous source/time/play-pause state
+-> presentation takes over same player/screen
+-> Back to Video
+-> restore previous source/time/play-pause state
+```
 
-In the real Unity project:
+Read `PRESENTATION_INTEGRATION_PLAN.md` before implementation.
+
+## EXACT FIRST ACTION WHEN PRESENTATION WORK RESUMES
+
+Use the real Unity project:
 
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
-create the dedicated project folder and an empty scene root for the Presentation system. Then add the first full `PresentationController.cs` and wire it one reference at a time.
+Then:
 
-Stef receives full-file scripts and microsteps.
+1. confirm Unity is out of Play Mode;
+2. create `Assets/StefanieInVR/Presentation`;
+3. create empty hierarchy root `PresentationSystem`;
+4. add the first complete `PresentationController.cs`;
+5. wire existing VideoTXL references one at a time;
+6. test Slot 1 demo first.
 
----
+Stef receives complete scripts and microsteps.
 
+## EXISTING VIDEOTXL / PLAYLIST FOUNDATION — PROVEN
 
-Last updated: 2026-08-27 (Europe/Amsterdam)
+The previous multiplayer blocker is cleared.
 
-## STATUS
-
-**PLAYLIST ACCESS / VIDEOTXL MULTIPLAYER BLOCKER CLEARED ✅**
-
-The real VRChat multiplayer test now passes after simplifying playlist privacy to **button visibility only**.
-
-Open Classroom is no longer blocking the StefanieInVR Presentation Service.
-
-## ACCEPTED ACCESS MODEL
-
-Playlist access means which custom selection buttons a local user may see/use:
-
-```text
-Visitor
-→ public playlist selection buttons
-
-VIP/admin
-→ public + VIP playlist selection buttons
-
-StefanieInVR
-→ public + VIP + owner-only selection buttons
-```
-
-Once any playlist/source is active:
-
-- VideoTXL owns playback and synchronization;
-- synchronized video/audio may reach everybody;
-- VideoTXL playlist content/UI may be visible;
-- permitted users may select another playlist using their own visible custom buttons;
-- no extra privacy is applied to `VideoSourceUI/Content`.
-
-Tablet Lock remains a separate system. Non-VIPs still receive the existing locked/dummy UI when the tablet is locked.
-
-## FINAL RESPONSIBILITY SPLIT
+Accepted responsibility split:
 
 ```text
 VideoTXL
-→ playlist/source objects
-→ playback
-→ synchronization
-→ playlist content UI
+-> playlist/source objects
+-> playback
+-> synchronization
+-> playlist content UI
 
 VipAccessManager / tablet UI
-→ public/VIP access
-→ VIP content
-→ tablet lock
-→ stage blocker
+-> public/VIP access
+-> tablet lock
+-> stage blocker
 
 TXLPlaylistPrivacyFilter
-→ local owner-only selection-button visibility only
+-> local owner-only selection-button visibility only
 ```
 
-Do not add VideoTXL/CommonTXL `AccessControl` for per-playlist visibility unless a future requirement actually needs it.
+Real VRChat multiplayer proof established:
 
-## IMPLEMENTED SIMPLIFICATION ✅
+- StefanieInVR sees the owner-only stream-selection button;
+- VIP non-owner does not;
+- ordinary users cannot reach that owner-only button;
+- synchronized playback reaches users;
+- permitted playlist switching works;
+- VideoTXL UI remains usable.
 
-`TXLPlaylistPrivacyFilter.cs` was reduced to one local responsibility:
+Do not reintroduce dynamic `VideoSourceUI/Content` hiding for this access requirement.
 
-- keep `ownerDisplayName`;
-- keep `GameObject[] ownerOnlyButtons`;
-- compare `Networking.LocalPlayer.displayName` locally;
-- show owner-only GameObjects only to the configured owner.
-
-Removed from that script:
-
-- VideoSourceUI references;
-- playlist Content hiding;
-- SourceManager binding;
-- source-ready events;
-- VIP/owner playlist classification;
-- active/current source privacy logic;
-- all VideoTXL-content manipulation.
-
-Scene wiring now uses the full object:
-
-`PlaylistLoadButton (StefanieInVR Stream)`
-
-The same object was removed from `VipAccessManager.enableWhenVip`, so VIP status cannot turn the owner-only button on.
-
-`VipAccessManager.enableWhenVip` is currently empty.
-
-## UDON SYNC WARNING — FIXED ✅
-
-`TXLPlaylistPrivacyFilter` and `VipAccessManager` are on the same GameObject.
-
-The simplified privacy script was initially set to `BehaviourSyncMode.None`, while `VipAccessManager` uses `BehaviourSyncMode.Manual` and contains synchronized state.
-
-Unity/UdonSharp warned about mixing sync methods on the same GameObject.
-
-The privacy script was changed to:
-
-`[UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]`
-
-It still has no own synced fields and does not request serialization. The change only keeps the UdonBehaviours on that GameObject compatible and removes the warning.
-
-## REAL VRCHAT MULTIPLAYER PROOF — PASSED ✅
-
-Tested in the freshly uploaded world.
-
-Proven:
-
-- StefanieInVR sees the owner-only `StefanieInVR Stream` selection button;
-- VIP non-owner does not see the owner-only stream selection button;
-- ordinary users cannot enter the VIP panel, so they cannot access that owner-only button;
-- synchronized playback reaches VIPs and ordinary users;
-- users may use their own permitted playlist buttons;
-- after the simplification, the previously observed wrong/missing playlist UI behaviour could no longer be reproduced during the full retest;
-- playlist switching and the VideoTXL UI behaved correctly in that retest.
-
-Important evidence distinction:
-
-The disappearance of the intermittent UI problem after removing Content-hiding is strong evidence that the old privacy/content interaction was involved. The exact internal timing/root cause was not instrumented separately, so do not claim a more specific mechanism than the test proves.
-
-## BLOCKER RESULT
-
-The accepted gate is now satisfied:
-
-```text
-owner-only source selection is hidden from unauthorized users
-+ synchronized playback still works
-+ permitted playlist switching works
-+ VideoTXL UI remains usable
-+ normal tablet/VIP access remains intact
-```
-
-**Result: PASS.**
-
-No further VideoTXL/privacy work is required before resuming the Presentation Service.
-
-## ACTIVE UNITY PROJECT
-
-Use the actual Unity project:
-
-`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
-
-Do not confuse it with the separate older local checkout:
-
-`E:/GitHub/Open_Classroom`
-
-GitHub `mailfromstefanie/Open_Classroom` `main` remains durable project memory.
-
-## CODEX + UNITY MCP
-
-Working route:
-
-```text
-Unity Editor
-→ KitWright MCP for Unity
-→ Direct HTTP
-→ Codex CLI
-```
-
-Keep future Codex tasks small and precisely scoped. Prefer read-only inspection until a specific change is approved.
-
-## NEXT PROJECT
-
-Return to:
-
-`mailfromstefanie/StefanieInVR-Presentation-Service`
-
-Resume:
-
-**Milestone 3 — one real private Free Plan presentation slot.**
-
-## FUTURE OPEN CLASSROOM IDEAS — PARKED
-
-Later, the architecture may support a central content manager for multiple worlds, for example:
-
-```text
-StefanieInVR Content Manager
-→ Open Classroom catalog
-→ Open Arthouse Cinema catalog
-```
-
-Potential fields: title, description, image URL, media URL, category, order, enabled state and access level.
-
-Do not build this while Presentation Service Milestone 3 is active.
-
-## DURABLE VIDEOTXL REFERENCE
-
-Before future player, playlist, remote-catalog or Cinema reuse work, read:
+Durable technical reference:
 
 `VIDEOTXL_2_5_1_FINDINGS.md`
 
-It records the verified VideoTXL 2.5.1 behaviour, the final button-only access model, the meaning of the PlaylistData JSON Inspector box, runtime PlaylistData/_LoadData building blocks, and the future online-JSON playlist/content-manager direction with explicit items that still require testing.
+## ACTIVE UNITY PROJECT
 
-Do not reconstruct these facts from old chats when this file exists.
+Use:
+
+`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+
+Do not confuse with the older local checkout:
+
+`E:/GitHub/Open_Classroom`
+
+## CURRENT CROSS-PROJECT SCHEDULE
+
+Before Classroom Presentation implementation resumes, Stef is intentionally doing:
+
+1. public StefanieInVR website + translation cleanup;
+2. local Windows StefanieInVR Website Editor;
+3. eReader/eBook design.
+
+Those tasks are separate from Open Classroom implementation.
+
+## FUTURE IDEAS — PARKED
+
+Online JSON/content-manager work remains future research.
+
+Do not build it merely because VideoTXL runtime PlaylistData loading is technically plausible.
 
 ## WORKING RULE
 
 ```text
 inspect
-→ make one small permanent-oriented change
-→ test in real VRChat where multiplayer matters
-→ record proven result
-→ continue only after proof
+-> one small permanent-oriented change
+-> test
+-> record proof
+-> continue
 ```
 
-## 2026-09-05 SCHEDULING NOTE — Presentation integration temporarily parked
-
-The Presentation prefab / Open Classroom integration remains the next Classroom implementation phase and its architecture stays valid.
-
-For 2026-09-05, Stef is intentionally doing two prerequisite/parallel product tasks first:
-
-1. clean and synchronize the public StefanieInVR website + translations with current project truth;
-2. build a small local Windows StefanieInVR Website Editor;
-3. then design the eReader/eBook system.
-
-Do not interpret this as cancelling or redesigning the Presentation prefab. Resume the existing `PRESENTATION_INTEGRATION_PLAN.md` afterward.
+For non-trivial code changes, always give Stef the complete replacement script.
