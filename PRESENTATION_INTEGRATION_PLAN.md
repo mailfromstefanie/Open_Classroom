@@ -58,6 +58,55 @@ Why:
 
 Do not add a second AVPro/Unity player unless real testing proves this route cannot support the prefab.
 
+## PERFORMANCE / EXCLUSIVE PLAYBACK STRATEGY — 2026-09-05
+
+Presentation mode should be designed so only one video playback pipeline is actively decoding at a time on each client, especially on Quest/Android.
+
+Important architecture distinction:
+
+- Pausing an arbitrary underlying `BaseVRCVideoPlayer` is broadly possible, but VRChat documentation does not guarantee that `Pause()` releases decoder/resources.
+- For strongest Quest performance, prefer a player-native local suspend/stop mechanism that stops the inactive backend while preserving the wrapper's sync state.
+- Do not directly `Stop()` an unknown third-party player's internal `BaseVRCVideoPlayer` as the default integration path, because the wrapper may interpret the stop event, immediately restart it, advance a playlist, or lose the state needed for clean restore.
+
+VideoTXL 2.5.1 has an ideal integration hook:
+
+- `SyncPlayer.LocalPlaybackEnabled = false` calls the local playback stop path and stops the active VideoTXL backend on that client.
+- The synchronized world state continues independently.
+- Setting `LocalPlaybackEnabled = true` later lets VideoTXL restore local playback from its synchronized timing logic.
+- This is preferable to merely pausing VideoTXL while the standalone Presentation Player is active.
+
+Recommended Presentation adapter contract:
+
+```text
+Enter Presentation Mode
+-> suspend existing world video player locally
+-> confirm inactive player backend is not decoding
+-> start Presentation Player
+-> show Presentation output on target screen
+
+Exit Presentation Mode
+-> stop Presentation Player completely
+-> restore screen ownership
+-> resume/re-enable existing world video player locally
+-> allow its own sync layer to catch up
+```
+
+Integration tiers:
+
+1. Native suspend adapter (preferred)
+   - VideoTXL: use LocalPlaybackEnabled.
+   - ProTV / other known players: use their supported local pause/stop/sync APIs where available.
+
+2. Generic wrapper-event adapter
+   - configurable UdonBehaviour + event names for suspend/resume if the third-party player exposes an API.
+
+3. Raw BaseVRCVideoPlayer fallback
+   - last resort only.
+   - Pause is safer for state preservation but not guaranteed to free all decoder resources.
+   - Stop gives stronger inactivity but may break or fight the third-party sync/controller logic.
+
+Do not promise universal "any player" hard-stop compatibility without a player-specific or configured suspend adapter.
+
 ## VERIFIED LOCAL VIDEOTXL 2.5.1 PACKAGE EVIDENCE — 2026-09-05
 
 Stef supplied both official 2.5.1 archives:
