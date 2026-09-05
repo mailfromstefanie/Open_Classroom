@@ -1,6 +1,6 @@
-# Start Prompt — Open Classroom / StefanieInVR Presentation
+# Start Prompt — Open Classroom / Presentation + Multi E-Reader
 
-Use this file to start a fresh ChatGPT session about the current Open Classroom Presentation system.
+Use this file to start a fresh ChatGPT session about the current Open Classroom Presentation and multi-e-reader/library systems.
 
 ## Projects
 
