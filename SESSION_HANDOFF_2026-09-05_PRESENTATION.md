@@ -4,7 +4,7 @@ Date: 2026-09-05 Europe/Amsterdam
 
 ## Current result
 
-**The standalone StefanieInVR Presentation Core plus the Open Classroom VideoTXL 2.5.1 adapter are now working in the tested setup.**
+**The standalone StefanieInVR Presentation Core plus the Open Classroom VideoTXL 2.5.1 adapter are working in the tested setup, including the final late-join proof.**
 
 The earlier open blockers in this handoff have been resolved.
 
@@ -27,7 +27,7 @@ Authoritative current files:
 - VideoTXL restores on both clients;
 - re-entering Presentation returns to the same saved slot/slide;
 - selecting another slot starts at slide 1;
-- late join: FINAL TEST STILL OPEN;
+- late join works;
 - same physical VideoTXL projector screen used for Presentation;
 - projector open/close preserved;
 - brightness/contrast preserved;
@@ -80,7 +80,7 @@ Stef created a full backup of the complete Unity project folder before final cle
 
 Everything currently discussed/tested by Stef is reported working.
 
-A formal Quest-headset acceptance run is not separately recorded in this chat. The final late-join proof is also still open.
+A formal Quest-headset acceptance run is not separately recorded in this chat.
 
 ## Cross-project next
 
