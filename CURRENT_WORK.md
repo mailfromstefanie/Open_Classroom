@@ -4,16 +4,18 @@ Last updated: 2026-09-05 (Europe/Amsterdam)
 
 ## AUTHORITATIVE CURRENT STATUS
 
-**The StefanieInVR Presentation Service is live, but the Presentation integration in the current Open Classroom scene has been dismantled and must now be rebuilt.**
+**The StefanieInVR Presentation Service is live. The old Classroom Presentation integration has been dismantled. The reusable Presentation prefab is now being redesigned as a standalone, video-player-independent Core.**
 
-Important current truth from Stef:
+Important current truth:
 
-- the earlier Classroom presentation setup no longer exists in the current scene;
 - do not describe the current Classroom as beta-ready with the Presentation Service;
-- the real Unity project remains the source of truth for what is currently present;
-- GitHub currently does not contain a committed `PresentationController.cs` implementation.
+- the previous VideoTXL-bound Presentation setup is not the current architecture;
+- GitHub currently does not contain a committed standalone `PresentationController.cs` implementation;
+- the real Unity project remains the source of truth for what actually exists in-scene;
+- VideoTXL 2.5.1 remains installed in the Classroom and will later receive an optional typed integration;
+- the standalone product itself must not depend on VideoTXL.
 
-The next active task is to rebuild the Classroom Presentation integration carefully on top of the existing VideoTXL player/screen foundation, then harden that working result into a **reusable VRChat Presentation prefab**.
+Read `PRESENTATION_ARCHITECTURE_DECISION.md` before implementation.
 
 ## REAL UNITY PROJECT
 
@@ -25,59 +27,103 @@ Do not confuse it with the older checkout:
 
 `E:/GitHub/Open_Classroom`
 
-## NEXT ACTIVE GOAL — REUSABLE PRESENTATION PREFAB
+## ACTIVE PRODUCT DIRECTION
 
-Target:
-
-```text
-current Open Classroom scene
--> inspect what presentation-related pieces, if any, still remain
--> preserve the existing VideoTXL player/screen foundation
--> rebuild the smallest working Presentation integration
--> prove Slot 1 and slide navigation
--> separate Classroom-specific references from reusable configuration
--> package/harden reusable prefab
--> test in small steps
--> later reuse in Art House Cinema and other worlds
-```
-
-The prefab must remain useful for creators who host their own compatible presentation MP4s.
-
-## EXACT FIRST ACTION IN THE NEXT CHAT
-
-First:
-
-1. confirm Unity is **OUT OF PLAY MODE**;
-2. inspect the current Classroom hierarchy around the existing VideoTXL player, projector/screen, playlist/source objects and tablet UI;
-3. identify what Presentation-specific objects/scripts were removed and what useful foundation remains;
-4. change nothing until that inventory is clear;
-5. then rebuild the smallest working Presentation path, starting with one Slot before adding navigation or prefab packaging.
-
-## ARCHITECTURE TO PRESERVE UNLESS REAL TESTING DISPROVES IT
-
-The accepted design remains:
+Target product:
 
 ```text
-Presentation UI / prefab controller
--> existing VideoTXL Playlist/source
--> existing VideoTXL 2.5.1 SyncPlayer
--> existing projector/screen
+Standalone StefanieInVR Presentation Core
+-> one own VRCUnityVideoPlayer
+-> own presentation state/sync
+-> own rollout Presentation Screen by default
+-> optional Renderer/material output
+-> optional VideoTXL adapter for Stef's Classroom
 ```
 
-Core rules:
+The Core must compile and work without VideoTXL, ProTV or USharpVideo.
 
-- one slide = one second on the presentation MP4 timeline;
-- Previous / Next seek by one second;
-- reuse the existing VideoTXL SyncPlayer and screen;
-- do not create a second video player by default;
-- VideoTXL remains playback/synchronization authority;
-- presentation controls request slot/seek/pause actions;
-- paused presentation slides remain visible;
-- preserve multiplayer/sync semantics already proven in the working scene.
+## ACCEPTED V1 NETWORK MODEL
 
-Polished Presentation Mode may later retain/restore the previous normal video source/time/play-pause context, but only after the core rebuilt Presentation flow is proven. Do not invent a second player merely for restoration.
+Synchronize only:
 
-Read `PRESENTATION_INTEGRATION_PLAN.md` for the preserved design contract.
+```text
+modeActive
+slotIndex
+slideIndex
+revision
+```
+
+All media handling happens locally on every client:
+
+```text
+receive state
+-> load selected slot locally if needed
+-> seek locally to requested slide
+-> pause locally
+```
+
+Do not synchronize continuous playback time for a normally paused presentation.
+
+## ACCEPTED V1 PLAYBACK MODEL
+
+Use one own `VRCUnityVideoPlayer`.
+
+Within the same slot:
+
+```text
+load MP4 once
+-> seek
+-> pause
+-> Next / Previous = seek again
+-> keep the MP4 loaded
+```
+
+Do not make snapshot-and-stop the default V1 behavior.
+
+Snapshot/RenderTexture hold is only a later performance experiment if Quest measurements show a real benefit.
+
+## QUEST / PERFORMANCE RULE
+
+Stef's practical baseline is that one active video player already works acceptably on Quest in the current world.
+
+V1 design goal:
+
+```text
+NORMAL
+normal world video player active
+Presentation player stopped
+
+PRESENTATION MODE
+normal player locally suspended/stopped where safely supported
+Presentation player active / paused on current slide
+
+EXIT
+Presentation player stopped
+normal player restored/resynced
+```
+
+Do not intentionally run both playback pipelines at once.
+
+Do not blindly Stop an unknown third-party player's internal `BaseVRCVideoPlayer`.
+
+The standalone prefab may require the creator to manage their unrelated video player themselves when no supported adapter exists.
+
+## OPEN CLASSROOM VIDEOTXL INTEGRATION
+
+VideoTXL is now an **optional integration**, not the Presentation Core.
+
+For Stef's Classroom, preferred integration is:
+
+- use VideoTXL 2.5.1;
+- on Presentation enter: `LocalPlaybackEnabled = false`;
+- use the standalone Presentation player for slot/slide playback;
+- optionally route Presentation output onto the existing VideoTXL screen;
+- on Presentation exit: stop Presentation playback, restore screen state, then set `LocalPlaybackEnabled = true`;
+- let VideoTXL restore/resync through its own logic.
+
+Do not use VideoTXL `_TriggerPause` as a local suspension API because it changes synchronized pause state.
+
+The exact 2.5.1 source research remains useful for this adapter.
 
 ## LIVE HOSTED SERVICE CONTRACT
 
@@ -90,49 +136,50 @@ Cross-project truth from `mailfromstefanie/StefanieInVR-Presentation-Service`:
 - current live web uploader uses the proven slot-code flow;
 - the prepared Username-only personal dashboard is not live.
 
-## VIDEOTXL FOUNDATION — PROVEN REFERENCE
+The reusable prefab must also allow creators to configure their own compatible MP4 URLs/hosting.
 
-Accepted responsibility split:
+## CURRENT NEXT IMPLEMENTATION ORDER
 
 ```text
-VideoTXL
--> playlist/source objects
--> playback
--> synchronization
--> playlist content UI
-
-VipAccessManager / tablet UI
--> public/VIP access
--> tablet lock
--> stage blocker
-
-TXLPlaylistPrivacyFilter
--> local owner-only selection-button visibility only
+1. build/inspect standalone Core on a dedicated test screen
+2. prove one direct MP4 Slot locally
+3. prove seek + pause
+4. prove Previous / Next / First
+5. add mode/slot/slide/revision sync
+6. prove late join / ownership
+7. prove Quest
+8. harden reusable prefab
+9. build VideoTXL 2.5.1 adapter for Open Classroom
+10. optionally reuse the existing VideoTXL physical screen
+11. later consider ProTV / other integrations only if useful
 ```
 
-Real VRChat multiplayer proof previously established:
+Do not start by creating a VideoTXL Presentation Playlist. That earlier design is superseded.
 
-- owner-only selection visibility works;
-- ordinary/VIP users do not get the owner-only button when not allowed;
-- synchronized playback reaches users;
-- permitted playlist switching works;
-- VideoTXL UI remains usable.
+## RESEARCH MATERIAL
 
-Do not reintroduce dynamic `VideoSourceUI/Content` hiding for that access requirement.
+Research folder:
 
-Detailed reference:
+`docs/research/standalone-presentation-player/`
 
-`VIDEOTXL_2_5_1_FINDINGS.md`
+The Work-generated architecture report will be uploaded there.
+
+Research evidence is not automatic project truth. Accepted decisions are recorded in:
+
+- `PRESENTATION_ARCHITECTURE_DECISION.md`
+- `PRESENTATION_INTEGRATION_PLAN.md`
+- this file
 
 ## CURRENT CROSS-PROJECT PRIORITY
 
 Current order:
 
-1. rebuild the Presentation integration in Open Classroom, then harden it into a reusable prefab;
-2. once stable, later integrate it into Art House Cinema;
-3. Website Editor and eReader/eBook work are parked unless Stef explicitly reprioritizes them.
+1. standalone Presentation prefab/core;
+2. VideoTXL integration into Open Classroom;
+3. once stable, later integrate the same Presentation product into Art House Cinema;
+4. Website Editor and eReader/eBook work remain parked unless Stef explicitly reprioritizes them.
 
-Cinema remains a separate project. Do not change Cinema implementation while packaging the Classroom prefab unless Stef explicitly asks.
+Cinema remains a separate project.
 
 ## WORKING STYLE WITH STEF
 
@@ -152,20 +199,12 @@ Rules:
 - Dutch, beginner-friendly;
 - one small Unity action at a time;
 - complete scripts, never partial fragments;
-- no architecture restart;
 - no destructive scene changes without inspection;
+- no CMD/PowerShell unless unavoidable;
 - ClientSim/editor evidence is not final PC/Quest/multiplayer proof.
 
 ## GITHUB TRUTH RULE
 
-GitHub is durable project memory, but the real tested Unity scene can be newer than the repository snapshot.
+GitHub is durable project memory, but the tested Unity scene can be newer than the repository snapshot.
 
-For this prefab phase:
-
-```text
-real scene inspection
--> record actual working setup in GitHub
--> then extract/harden reusable prefab
-```
-
-Never overwrite working scene truth with an older planning assumption.
+Never overwrite tested scene truth with an older planning assumption.
