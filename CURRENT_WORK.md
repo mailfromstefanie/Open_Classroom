@@ -4,18 +4,16 @@ Last updated: 2026-09-05 (Europe/Amsterdam)
 
 ## AUTHORITATIVE CURRENT STATUS
 
-**Open Classroom is user-confirmed ready for beta testing with the live StefanieInVR Presentation Service.**
+**The StefanieInVR Presentation Service is live, but the Presentation integration in the current Open Classroom scene has been dismantled and must now be rebuilt.**
 
-Important evidence boundary:
+Important current truth from Stef:
 
-- this is Stef's confirmed current Unity/world state;
-- the real Unity project may be newer than the GitHub source snapshot;
-- GitHub currently does not contain a committed `PresentationController.cs` implementation;
-- therefore do not infer that the repository alone reconstructs the beta-ready presentation setup.
+- the earlier Classroom presentation setup no longer exists in the current scene;
+- do not describe the current Classroom as beta-ready with the Presentation Service;
+- the real Unity project remains the source of truth for what is currently present;
+- GitHub currently does not contain a committed `PresentationController.cs` implementation.
 
-The next active task is **not to rebuild the Classroom presentation integration from scratch**.
-
-The next active task is to inspect the real beta-ready Classroom scene and turn the proven presentation setup into a **reusable VRChat Presentation prefab**.
+The next active task is to rebuild the Classroom Presentation integration carefully on top of the existing VideoTXL player/screen foundation, then harden that working result into a **reusable VRChat Presentation prefab**.
 
 ## REAL UNITY PROJECT
 
@@ -32,10 +30,11 @@ Do not confuse it with the older checkout:
 Target:
 
 ```text
-beta-ready Open Classroom presentation setup
--> inspect actual current scene
--> identify working presentation objects/scripts/references
--> preserve working behaviour
+current Open Classroom scene
+-> inspect what presentation-related pieces, if any, still remain
+-> preserve the existing VideoTXL player/screen foundation
+-> rebuild the smallest working Presentation integration
+-> prove Slot 1 and slide navigation
 -> separate Classroom-specific references from reusable configuration
 -> package/harden reusable prefab
 -> test in small steps
@@ -46,23 +45,13 @@ The prefab must remain useful for creators who host their own compatible present
 
 ## EXACT FIRST ACTION IN THE NEXT CHAT
 
-Do not create new presentation objects yet.
-
 First:
 
 1. confirm Unity is **OUT OF PLAY MODE**;
-2. inspect the actual current presentation-related hierarchy in the real Classroom scene;
-3. identify the current scripts/components and references responsible for:
-   - selecting Presentation Slots;
-   - Previous / Next / First;
-   - current slide/page state;
-   - pause/seek behaviour;
-   - VideoTXL player/screen integration;
-   - any existing `Back to Video` behaviour;
-   - tablet/access UI connections;
-4. change nothing until this inventory is clear.
-
-Because the real scene is user-confirmed beta-ready while GitHub lacks the implementation script, **scene inspection wins over the older "create PresentationSystem from scratch" instruction**.
+2. inspect the current Classroom hierarchy around the existing VideoTXL player, projector/screen, playlist/source objects and tablet UI;
+3. identify what Presentation-specific objects/scripts were removed and what useful foundation remains;
+4. change nothing until that inventory is clear;
+5. then rebuild the smallest working Presentation path, starting with one Slot before adding navigation or prefab packaging.
 
 ## ARCHITECTURE TO PRESERVE UNLESS REAL TESTING DISPROVES IT
 
@@ -86,7 +75,7 @@ Core rules:
 - paused presentation slides remain visible;
 - preserve multiplayer/sync semantics already proven in the working scene.
 
-Polished Presentation Mode should retain/restore the previous normal video source/time/play-pause context if the real current Classroom setup already proves that route. Do not invent a second player merely for restoration.
+Polished Presentation Mode may later retain/restore the previous normal video source/time/play-pause context, but only after the core rebuilt Presentation flow is proven. Do not invent a second player merely for restoration.
 
 Read `PRESENTATION_INTEGRATION_PLAN.md` for the preserved design contract.
 
@@ -139,7 +128,7 @@ Detailed reference:
 
 Current order:
 
-1. reusable Presentation prefab from the beta-ready Open Classroom scene;
+1. rebuild the Presentation integration in Open Classroom, then harden it into a reusable prefab;
 2. once stable, later integrate it into Art House Cinema;
 3. Website Editor and eReader/eBook work are parked unless Stef explicitly reprioritizes them.
 
