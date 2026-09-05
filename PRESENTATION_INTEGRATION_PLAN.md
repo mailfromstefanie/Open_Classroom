@@ -521,7 +521,7 @@ Final reported/proven result:
 - real two-client sync works;
 - cross-client slide control works;
 - Presentation OFF/ON restores the same Presentation slide;
-- late join: FINAL TEST STILL OPEN;
+- late join works;
 - VideoTXL local suspend/restore works;
 - existing physical screen reuse works;
 - projector visibility works;
@@ -531,10 +531,34 @@ Final reported/proven result:
 - Presentation UI is integrated into the physical tablet;
 - `PresentationCore` is organized under `UIs/Managers`.
 
-Most staged implementation gates are closed. The only remaining Presentation-specific proof is late join.
+The staged Open Classroom Presentation implementation gates are closed for the current functional/multiplayer pass. The next phase is beta use/feedback, followed by sellable-prefab productization.
 
 Current authoritative acceptance snapshot:
 
 `PRESENTATION_ACCEPTANCE_2026-09-05.md`
 
 Quest-specific device proof remains a separate evidence question if formal headset release acceptance is needed later.
+
+
+## BETA / PRODUCTIZATION HANDOFF — 2026-09-05
+
+The Open Classroom implementation has completed its current functional/multiplayer acceptance pass, including late join.
+
+Next product route:
+
+```text
+Open Classroom implementation accepted
+-> beta use with real users
+-> collect bugs / UX feedback
+-> freeze accepted beta behavior
+-> harden a clean standalone reusable package
+-> remove Classroom-only assumptions from the sale package
+-> expose creator-facing configuration
+-> verify clean import/install in a fresh Unity project
+-> documentation + setup/manuals
+-> versioned distributable/sellable prefab release
+```
+
+The Presentation Service repository should coordinate the beta/product/release phase.
+
+Open Classroom remains the technical source of the proven Unity implementation.
