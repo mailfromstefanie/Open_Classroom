@@ -188,9 +188,9 @@ The exact VideoTXL 2.5.1 source research remains useful for the optional VideoTX
 
 ## RESEARCH REPORT
 
-A detailed Work-generated architecture report is being stored under:
+The completed Work-generated architecture report is stored at:
 
-`docs/research/standalone-presentation-player/`
+`docs/research/standalone-presentation-player/Standalone_VRChat_Presentation_Player_Architecture_Decision.docx`
 
 Research findings do not automatically become project truth. This file records the choices actually accepted for the product.
 
