@@ -460,3 +460,39 @@ Read before performance changes:
 `PERFORMANCE_AUDIT_2026-09-05.md`
 
 Optimization order is deliberately conservative: e-reader material -> e-reader RT -> VideoTXL RT -> real Quest evidence -> only then glass/material redesign.
+
+
+## EXACT NEXT SESSION — BACKUP FIRST
+
+No more changes are planned tonight.
+
+Before the next performance/cleanup round, Stef will make a **fresh full backup of the current working Unity project including the new multi-e-reader implementation**.
+
+Important distinction:
+
+- the earlier full backup protects the accepted Presentation state;
+- the new e-reader implementation was added afterward;
+- therefore a new backup is required before touching RenderTexture/material performance settings.
+
+After that backup, the next narrow optimization round is:
+
+```text
+verify/fix M_EReaderScreen emission mapping
+-> validate e-reader
+-> RT_EReader: 1x MSAA + automatic mipmaps OFF
+-> validate e-reader
+-> VideoTXLCRT-Quest: 1x MSAA + automatic mipmaps OFF
+-> validate VideoTXL
+-> validate Presentation takeover/restore
+-> STOP
+```
+
+Do not include transparent glass, poster normalization or Presentation RenderTexture changes in that same round.
+
+Detailed e-reader handoff:
+
+`EREADER_LIBRARY_HANDOFF_2026-09-05.md`
+
+Detailed performance audit:
+
+`PERFORMANCE_AUDIT_2026-09-05.md`
