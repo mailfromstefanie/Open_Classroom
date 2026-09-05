@@ -23,7 +23,8 @@ Later target:
 3. `PRESENTATION_ARCHITECTURE_DECISION.md`
 4. `PRESENTATION_INTEGRATION_PLAN.md`
 5. `VIDEOTXL_2_5_1_FINDINGS.md` only when working on the VideoTXL adapter
-6. Presentation Service `CURRENT_WORK.md` for hosted/live truth
+6. `REFERENCE/VideoTXL_2.5.1/README.md` and the exact package source when VideoTXL implementation details are needed
+7. Presentation Service `CURRENT_WORK.md` for hosted/live truth
 
 ## Exact current truth
 
@@ -81,7 +82,11 @@ Try to keep only one playback pipeline intentionally active at a time.
 
 Standalone product must not blindly stop unknown third-party internal video components.
 
-For Stef's VideoTXL Classroom integration, prefer:
+For Stef's VideoTXL Classroom integration, use the exact checked-in 2.5.1 reference at:
+
+`REFERENCE/VideoTXL_2.5.1/com.texelsaur.video-2.5.1/`
+
+Preferred suspension path:
 
 `SyncPlayer.LocalPlaybackEnabled = false`
 
