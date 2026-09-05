@@ -123,7 +123,11 @@ For Stef's Classroom, preferred integration is:
 
 Do not use VideoTXL `_TriggerPause` as a local suspension API because it changes synchronized pause state.
 
-The exact 2.5.1 source research remains useful for this adapter.
+The exact 2.5.1 source is now also checked into GitHub for durable inspection at:
+
+`REFERENCE/VideoTXL_2.5.1/com.texelsaur.video-2.5.1/`
+
+The package reports version `2.5.1` and includes the preserved upstream MIT license. Use this exact reference for adapter work rather than guessing from current upstream code.
 
 ## LIVE HOSTED SERVICE CONTRACT
 
