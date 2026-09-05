@@ -1,10 +1,10 @@
 # Presentation Prefab / Classroom Integration Plan
 
-Last updated: 2026-09-04 (Europe/Amsterdam)
+Last updated: 2026-09-05 (Europe/Amsterdam)
 
 ## Status
 
-**ACTIVE — build the first VRChat Presentation controller inside Open Classroom.**
+**READY TO RESUME — architecture accepted; implementation temporarily parked by Stef's current website/editor/eReader work.**
 
 The hosted StefanieInVR Presentation Service Milestone 4 is accepted and live. The Classroom implementation may now begin.
 
@@ -155,3 +155,16 @@ Implementation note:
 Use the existing VideoTXL 2.5.1 runtime state/API where possible. Do not create a second player merely to preserve the old video. First prove source/time restoration with the real Classroom wiring; only then generalize/package it.
 
 This feature is part of the intended polished Classroom Presentation Mode, not an optional future idea.
+
+
+## Scheduling note — 2026-09-05
+
+This plan remains authoritative for the first Classroom Presentation proof.
+
+Implementation is temporarily parked while Stef completes:
+
+1. public website + translation baseline cleanup;
+2. local Website Editor work;
+3. eReader/eBook design.
+
+Do not reinterpret this pause as a redesign or cancellation.
