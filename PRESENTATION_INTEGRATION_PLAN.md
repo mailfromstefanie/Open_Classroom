@@ -4,11 +4,11 @@ Last updated: 2026-09-05 (Europe/Amsterdam)
 
 ## STATUS
 
-**PRESENTATION SERVICE LIVE — OLD CLASSROOM INTEGRATION DISMANTLED — STANDALONE PREFAB ARCHITECTURE ACCEPTED**
+**PRESENTATION SERVICE LIVE — STANDALONE CORE + OPEN CLASSROOM VIDEOTXL ADAPTER IMPLEMENTED AND WORKING**
 
 The reusable StefanieInVR Presentation product is no longer planned as a VideoTXL-bound playlist feature.
 
-The current accepted direction is a standalone Core with its own lightweight VRChat video backend, plus optional integrations for existing video systems.
+The accepted direction is now implemented: a standalone Core with its own VRChat video backend, plus an Open Classroom VideoTXL 2.5.1 adapter.
 
 Read first:
 
