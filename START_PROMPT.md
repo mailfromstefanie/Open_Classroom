@@ -136,6 +136,31 @@ If Stef wants to move to the next broad project phase, read the Cinema repositor
 
 Quest-specific headset acceptance is not separately documented in this chat; do not fabricate a Quest PASS.
 
+## Current e-reader/library work
+
+A new multi-e-reader/library implementation now exists in the real Unity project.
+
+Current architecture:
+
+```text
+one local EReaderLocalPlaybackManager
+-> one VRCUnityVideoPlayer
+-> one shared RT_EReader
+-> multiple EReaderBook instances
+```
+
+Two example books, local page/bookmark/Keep Open, last-touched-wins arbitration, stale-load protection, reset/toggle integration and compact page controls work in ClientSim.
+
+Presentation/VideoTXL scripts were not modified.
+
+Still unproven for e-reader acceptance:
+
+- real headset left/right-hand comfort;
+- real two-player VRCObjectSync + independent reading;
+- Quest device profiling.
+
+Read `CURRENT_WORK.md` for exact current e-reader status before making changes.
+
 ## Working style
 
 - speak Dutch;
