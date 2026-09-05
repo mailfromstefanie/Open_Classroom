@@ -6,6 +6,8 @@ Purpose: durable technical memory for the Open Classroom player setup and for re
 
 > **Scope note — 2026-09-05:** This file remains authoritative reference for the existing Open Classroom VideoTXL 2.5.1 setup, playlist/privacy behavior, and future VideoTXL adapter work. It is **not** the architecture authority for the reusable Presentation prefab. The Presentation Core is now standalone; read `PRESENTATION_ARCHITECTURE_DECISION.md` for that decision.
 
+> **Durable source reference — 2026-09-05:** The exact package is checked into `REFERENCE/VideoTXL_2.5.1/com.texelsaur.video-2.5.1/`. Use that copy for future source inspection of the Classroom adapter.
+
 This file deliberately separates **proven facts**, **accepted project decisions**, and **future ideas that still require implementation/testing**.
 
 ---
