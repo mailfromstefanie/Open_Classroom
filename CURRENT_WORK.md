@@ -98,20 +98,21 @@ Implementation rule:
 
 The several-second delay when re-entering Presentation is currently accepted because the Presentation player is actually stopped while inactive and must load the MP4 again. This keeps the design aligned with the Quest goal of not intentionally holding two active playback pipelines.
 
-## LATE JOIN — WORKING
+## LATE JOIN — ONLY REMAINING PRESENTATION TEST
 
-Stef reports the final Presentation system works, including the late-join scenario discussed at the end of the test pass.
+Late-join support is designed into the synchronized semantic state, but Stef has **not yet run the final late-join proof**.
 
-Accepted late-join behavior:
+Required final test:
 
 ```text
-existing client already presenting on slot/slide
--> new client joins
--> new client reconstructs current mode + slot + slide
--> new client does not reset the authoritative Presentation state
+Client 1 already in Presentation Mode on a later slide
+-> Client 2 joins afterward
+-> Client 2 must automatically enter Presentation Mode
+-> Client 2 must reconstruct the same slot + slide
+-> Client 2 must not reset or mutate the authoritative state
 ```
 
-If a future regression appears, re-prove only this isolated case.
+This is now the only remaining Presentation-specific test gate reported by Stef.
 
 ## VIDEOTXL 2.5.1 ADAPTER — WORKING
 
@@ -241,7 +242,7 @@ Reported working:
 - Presentation OFF/ON sync;
 - VideoTXL restore on both clients;
 - same Presentation slide restored after re-entry;
-- late join behavior;
+- late join behavior: NOT YET FINAL-PROVEN;
 - projector visibility behavior;
 - brightness/contrast behavior;
 - physical screen Presentation output;
@@ -264,13 +265,13 @@ Cross-project truth from `mailfromstefanie/StefanieInVR-Presentation-Service`:
 - current live uploader uses the proven slot-code flow;
 - prepared Username-only dashboard is not live.
 
-Open Classroom can now truthfully be described as ready for beta testing with the Presentation Service in the tested setup.
+Open Classroom Presentation is functionally working in the tested setup; only the final late-join proof remains before calling the Presentation test pass fully closed.
 
 ## CURRENT CROSS-PROJECT STATE
 
 ```text
 Presentation Service: LIVE
-Open Classroom Presentation: WORKING / BETA-READY
+Open Classroom Presentation: WORKING — FINAL LATE-JOIN TEST REMAINS
 Reusable Presentation architecture: PROVEN IN CLASSROOM
 Art House Cinema Presentation integration: NOT YET DONE
 ```
