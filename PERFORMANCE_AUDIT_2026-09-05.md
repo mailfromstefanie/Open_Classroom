@@ -128,6 +128,16 @@ Likely correction:
 
 This should be treated as a narrow e-reader material fix, not a Presentation/VideoTXL architecture change.
 
+## Safety gate before optimization
+
+No optimization changes were applied during this audit.
+
+Before applying any of the changes below, Stef will first make a **fresh full backup of the current Unity project including the new multi-e-reader implementation**.
+
+The earlier Presentation backup predates the completed e-reader implementation, so it is not the intended recovery point for the next optimization round.
+
+Do not change RenderTexture/material settings before that fresh backup exists.
+
 ## Recommended optimization order
 
 Use this order and change one risk area at a time:
