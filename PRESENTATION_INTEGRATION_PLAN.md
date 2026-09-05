@@ -228,6 +228,12 @@ Relevant exact 2.5.1 facts retained for adapter work:
 
 Keep Stef's Classroom on VideoTXL 2.5.1 for now.
 
+Durable exact source reference:
+
+`REFERENCE/VideoTXL_2.5.1/com.texelsaur.video-2.5.1/`
+
+Use that checked-in package for future adapter inspection. It contains `package.json` version 2.5.1, Runtime/Editor package content, CHANGELOG and the preserved upstream MIT LICENSE.
+
 ## SUPERSEDED VIDEOTXL PLAYLIST DESIGN
 
 Historical research previously concluded:
