@@ -34,7 +34,7 @@ Real Unity project:
 
 ## Exact current truth
 
-**The Open Classroom Presentation system is working and the previously open Presentation blockers are closed in the tested environment.**
+**The Open Classroom Presentation system is working; screen sizing is fixed, and the only remaining Presentation-specific test is late join.**
 
 Do not start by rebuilding or re-debugging the system.
 
@@ -67,7 +67,7 @@ Current reported working behavior includes:
 - Presentation ON/OFF synchronization;
 - VideoTXL restoration on both clients;
 - resume same Presentation slot/slide after OFF/ON;
-- late-join reconstruction;
+- late-join reconstruction: NOT YET FINAL-PROVEN;
 - physical screen output;
 - projector open/close behavior;
 - brightness/contrast behavior;
@@ -126,11 +126,11 @@ It was removed and normal VideoTXL works again.
 
 ```text
 Presentation Service = LIVE
-Open Classroom Presentation = WORKING / BETA-READY
+Open Classroom Presentation = WORKING — FINAL LATE-JOIN TEST OPEN
 Cinema Presentation = NOT INTEGRATED YET
 ```
 
-If Stef wants to continue Open Classroom, preserve the working state and only make deliberate feature/prefab-polish changes.
+If Stef wants to continue Open Classroom, first run the one remaining late-join proof. If it passes, mark the Presentation test pass fully closed.
 
 If Stef wants to move to the next broad project phase, read the Cinema repository and resume its existing control/menu/reset/admin route before integrating the proven Presentation product.
 
