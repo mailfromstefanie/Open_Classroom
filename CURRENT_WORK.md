@@ -128,3 +128,24 @@ inspect
 ```
 
 For non-trivial code changes, always give Stef the complete replacement script.
+
+## 2026-09-05 TODAY — Presentation integration reactivated
+
+The Presentation prefab / Classroom integration is **ACTIVE TODAY**.
+
+Stef will build it manually in the real Unity project with normal ChatGPT guidance. Codex is not the Unity executor for this work block.
+
+Use the existing accepted architecture in `PRESENTATION_INTEGRATION_PLAN.md`.
+
+Exact working style:
+
+```text
+ChatGPT explains one small Unity action
+-> Stef performs it
+-> ChatGPT provides complete script files when needed
+-> Stef wires references
+-> test
+-> continue
+```
+
+Do not restart architecture planning. Do not create a second video player unless the accepted VideoTXL route fails in real testing.
