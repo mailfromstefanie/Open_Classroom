@@ -4,17 +4,17 @@ Last updated: 2026-09-05 (Europe/Amsterdam)
 
 ## STATUS
 
-**OPEN CLASSROOM BETA-READY BY STEF'S CONFIRMATION — REUSABLE PREFAB PHASE ACTIVE NEXT**
+**PRESENTATION SERVICE LIVE — CLASSROOM PRESENTATION INTEGRATION CURRENTLY DISMANTLED — REBUILD PHASE ACTIVE**
 
 The hosted StefanieInVR Presentation Service is live.
 
-Stef confirms the real Open Classroom Unity/world setup is already ready for beta testing with that service.
+Stef confirms that the previous Presentation integration in the real Open Classroom scene has been dismantled. The current Classroom must therefore not be described as beta-ready with the Presentation Service.
 
 Important repository boundary:
 
 - this GitHub snapshot does not currently contain a committed `PresentationController.cs`;
-- therefore the actual Unity scene must be inspected before any reconstruction or extraction;
-- older "create PresentationSystem from scratch" instructions are superseded for the next session.
+- the real Unity scene must be inspected to see what foundation remains;
+- rebuild only the smallest safe Presentation path on top of the existing VideoTXL player/screen architecture.
 
 ## PRODUCT CONTRACT
 
@@ -35,7 +35,7 @@ Reusable prefab:
 
 ## ACCEPTED CLASSROOM ARCHITECTURE
 
-Preserve unless real beta-ready scene inspection proves otherwise:
+Target architecture unless real testing disproves it:
 
 ```text
 Presentation UI / controller
@@ -95,27 +95,28 @@ normal VideoTXL video
 -> restore previous source/time/play-pause state
 ```
 
-However, for the current prefab phase:
+For the current rebuild phase:
 
-- first inspect whether the beta-ready Classroom already implements/proves this;
-- preserve proven behaviour;
-- if it is not implemented, treat exact source restoration as a separate proof step;
+- do not make Back to Video the first blocker;
+- first prove one Presentation Slot through the existing VideoTXL player/screen;
+- then prove Previous / Next / First and pause/seek;
+- treat exact source/time/play-pause restoration as a separate proof step;
 - do not create a second player just to avoid understanding VideoTXL state restoration.
 
 ## PREFAB EXTRACTION / HARDENING ROUTE
 
 The next phase is:
 
-1. inspect actual beta-ready Classroom presentation hierarchy;
-2. inventory every presentation-related GameObject/component/script;
+1. inspect the current Classroom hierarchy and the surviving VideoTXL/player/screen/tablet foundation;
+2. inventory any remaining Presentation-related GameObjects/components/scripts;
 3. record exact VideoTXL/playlist/screen/UI references;
-4. identify what is Classroom-specific;
-5. identify what belongs inside the reusable prefab;
-6. create the smallest reusable boundary;
-7. expose configuration cleanly in Inspector;
-8. test the prefab without breaking the working Classroom;
-9. prove Slot 1 first;
-10. prove navigation;
+4. rebuild the smallest working Presentation path;
+5. prove Slot 1 first;
+6. prove Previous / Next / First and pause/seek;
+7. identify what is Classroom-specific;
+8. identify what belongs inside the reusable prefab;
+9. create the smallest reusable boundary;
+10. expose configuration cleanly in Inspector;
 11. prove multiplayer/sync/late join as applicable;
 12. prove Quest;
 13. only then call the prefab reusable.
