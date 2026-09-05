@@ -313,3 +313,129 @@ GitHub is durable project memory.
 The tested Unity scene can be newer than copied source/reference files in this repository.
 
 Never overwrite known working Unity scene truth with an older GitHub planning assumption.
+
+
+## MULTI E-READER / LIBRARY — IMPLEMENTED IN REAL UNITY PROJECT
+
+Codex completed the first reusable multi-e-reader/library implementation in the real Unity project.
+
+Current architecture:
+
+```text
+one local EReaderLocalPlaybackManager
+-> one VRCUnityVideoPlayer
+-> one shared RT_EReader
+-> many lightweight EReaderBook instances
+```
+
+Current scene examples:
+
+- `Book_A`
+- `Book_B`
+- `Book_A_Home`
+- `Book_B_Home`
+
+Hierarchy:
+
+```text
+UIs/Managers/EReader Local Playback Manager
+Other Toggles and Systems/E-Reader/
+  Book_A
+  Book_B
+  Book_A_Home
+  Book_B_Home
+```
+
+Important implementation facts:
+
+- each book has its own URL/title/local page state;
+- reading state is local only;
+- physical pickup uses VRC Pickup + kinematic Rigidbody + VRCObjectSync;
+- Auto Hold enabled;
+- orientation = Any;
+- one shared e-reader player and RenderTexture only;
+- inactive books disable their Canvas and screen renderer;
+- idle e-reader player is stopped;
+- no per-book video player;
+- no per-book `Update()`;
+- existing Canvas physical fit was preserved at 160 x 15 with scale 0.001;
+- existing ResettableObject infrastructure is reused;
+- Reset Group 6 is the intended book reset group;
+- Presentation and VideoTXL scripts were not modified.
+
+### E-reader controls
+
+Current compact local controls:
+
+```text
+First
+-10
+Prev
+Page X / Y
+Next
++10
+Keep Open
+X
+```
+
+Current media contract remains one page/spread per second.
+
+### Keep Open / last-touched-wins
+
+Local behavior:
+
+- Keep Open OFF + drop -> reader Canvas/screen/player closes;
+- Keep Open ON + drop -> current book remains locally active where placed;
+- activating another book always closes the previously active local reader;
+- X closes the reader and disables Keep Open;
+- stale callbacks from a prior book are ignored;
+- only the latest locally activated book may own/show the shared e-reader output.
+
+### Local bookmark behavior
+
+The last local page is remembered per book for the current world session and restored when that book is reopened.
+
+No page/bookmark/Keep Open/active-reader state is network-synchronized.
+
+### Current ClientSim proof
+
+Reported working:
+
+- real MP4 loaded and 213 pages detected;
+- Loading state;
+- First / Previous / Next / +/-10;
+- page bounds;
+- local last-page restore;
+- Keep Open ON/OFF drop behavior;
+- Book A -> Book B arbitration;
+- rapid switching while a prior URL is still loading;
+- stale load callback protection;
+- toggle OFF closes active reader;
+- Reset returns Book B exactly to Home;
+- inactive screen renderers/player stop correctly;
+- existing Presentation Slot 1 still loads/pauses;
+- Presentation stop restores physical screen and local VideoTXL playback;
+- Unity compile clean / no compile errors.
+
+### E-reader evidence still open
+
+Do NOT mark these as proven yet:
+
+1. real headset left/right-hand comfort and orientation;
+2. real two-player VRChat proof of physical VRCObjectSync plus independent local reading sessions;
+3. Quest device profiling/performance proof.
+
+The structure is Quest-oriented, but no formal Quest profiler/device PASS exists yet.
+
+### E-reader source changes reported by Codex
+
+Real project changes include:
+
+- `Assets/Ereader/EReaderLocalPlaybackManager.cs`
+- `Assets/Ereader/EReaderBook.cs`
+- corresponding UdonSharp program assets;
+- `Assets/#Classroom/Scenes/Classroom.unity`
+
+Old `LocalEReader.cs` / orphaned `LocalEReader.asset` were removed.
+
+The tested real Unity project remains authoritative until these local changes are deliberately mirrored/committed as source snapshots.
