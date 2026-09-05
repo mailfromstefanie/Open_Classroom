@@ -58,6 +58,38 @@ Why:
 
 Do not add a second AVPro/Unity player unless real testing proves this route cannot support the prefab.
 
+## EXACT VIDEOTXL 2.5.1 SOURCE FINDINGS — 2026-09-05
+
+Official upstream source inspected at tag `2.5.1` in `vrctxl/VideoTXL`.
+
+Confirmed facts relevant to the Presentation rebuild:
+
+- `Playlist._MoveTo(index)` is synchronized and changes the selected track index.
+- changing the playlist track triggers the source URL-ready path and therefore uses the existing SourceManager / SyncPlayer route;
+- `Playlist.CurrentIndex` is public read-only state and is suitable for identifying the active Presentation Slot;
+- `SyncPlayer._SetTargetTime(float)` is the synchronized seek route, but it only works while the player is in `VIDEO_STATE_PLAYING` and the source is seekable;
+- `SyncPlayer._TriggerPause()` synchronizes pause/unpause and also requires a playing, seekable source;
+- therefore selecting a Presentation Slot and immediately seeking/pausing in the same frame is unsafe; the Presentation controller needs to wait until the selected MP4 is actually playing + seekable before applying the initial slide seek/pause;
+- `Playlist.AutoAdvance = false` prevents normal video-end advancement to the next Presentation Slot;
+- SourceManager resets other sources when a Playlist becomes ready, which fits the existing single-player architecture;
+- the existing Classroom `TXLScreenAutoVisibility` explicitly supports `showWhenPaused`, so a paused Presentation slide can remain visible.
+
+Preferred V1 source layout after this inspection:
+
+```text
+ONE VideoTXL Presentation Playlist/source
+-> Track 0 = Presentation Slot 1
+-> Track 1 = Presentation Slot 2
+...
+-> Track 9 = Presentation Slot 10
+```
+
+This is preferred over ten separate VideoTXL sources because it keeps one Presentation source inside the existing SourceManager and lets slot selection use the Playlist's synchronized track index.
+
+Important edge case for later testing:
+
+`SyncPlayer._SetTargetTime(time)` contains special handling when the target is less than one second from the MP4 end. Therefore the final slide of a generated Presentation MP4 must be explicitly tested against the actual encoded duration; do not assume all encoded durations land on exact integer seconds.
+
 ## USER-FACING V1 PREFAB CONTROLS
 
 Target controls remain:
