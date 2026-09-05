@@ -270,6 +270,48 @@ Route:
 
 Do not broaden this into a converter rewrite or broad VideoTXL refactor.
 
+## REAL MULTIPLAYER SYNC PROOF — 2026-09-05
+
+Real two-client Build & Test has now PASSED for the core Presentation synchronization path.
+
+Observed:
+
+- Client 1 turning Presentation ON caused Client 2 to enter Presentation Mode;
+- selected Presentation state synchronized;
+- slide changes synchronized between both clients;
+- turning Presentation OFF restored VideoTXL on both clients;
+- both clients returned to the same corresponding position in the normal VideoTXL video after Presentation exit.
+
+This proves the current implementation's core shared Presentation state/hand-off path is functioning across two real test clients.
+
+### Newly observed resume bug
+
+One behavior is still wrong:
+
+```text
+Presentation active on a later slide
+-> Presentation OFF
+-> normal VideoTXL resumes correctly
+-> Presentation ON again
+-> both clients return to slide 1 instead of the last Presentation slide
+```
+
+Desired behavior:
+
+```text
+Presentation OFF
+-> preserve current selected slot + slideIndex
+
+Presentation ON again
+-> resume the same Presentation slot and same slide where the presenter stopped
+```
+
+Changing to a different slot may still intentionally start that newly selected slot at slide 1.
+
+Likely cause is current Presentation start/toggle logic resetting `slideIndex` to 0 when re-entering Presentation Mode. Confirm against the real Unity `PresentationController.cs` before editing.
+
+This resume fix is now a required behavior before final prefab hardening.
+
 ## AFTER SCREEN-FILL FIX — REQUIRED PROOF ORDER
 
 ### Real multiplayer Build & Test
