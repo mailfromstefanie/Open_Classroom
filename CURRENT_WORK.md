@@ -162,7 +162,7 @@ Research folder:
 
 `docs/research/standalone-presentation-player/`
 
-The Work-generated architecture report will be uploaded there.
+The Work-generated architecture report is now present there as `Standalone_VRChat_Presentation_Player_Architecture_Decision.docx`.
 
 Research evidence is not automatic project truth. Accepted decisions are recorded in:
 
