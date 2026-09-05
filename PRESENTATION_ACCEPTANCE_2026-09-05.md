@@ -1,6 +1,6 @@
 # Presentation Acceptance Snapshot — 2026-09-05
 
-Status: **WORKING / BETA-READY IN THE TESTED OPEN CLASSROOM SETUP**
+Status: **WORKING — FINAL LATE-JOIN TEST STILL OPEN**
 
 This file is the durable final handoff for the 2026-09-05 standalone Presentation + Open Classroom VideoTXL integration sprint.
 
@@ -72,13 +72,11 @@ Fix:
 
 Final result reported working.
 
-## Late join
+## Late join — NOT YET FINAL-PROVEN
 
-Late-join handling was deliberately designed around the synced semantic state.
+Late-join handling is deliberately designed around the synced semantic state, but the final real late-join test is still open.
 
-Stef reports the completed final system works, including the late-join scenario discussed at the end of the test pass.
-
-Desired/proven contract:
+Required contract to prove:
 
 ```text
 join while Presentation already active
@@ -88,6 +86,8 @@ join while Presentation already active
 -> pause
 -> do not overwrite authoritative state
 ```
+
+Stef reports that this is the only remaining Presentation-specific test.
 
 ## VideoTXL restoration
 
@@ -179,7 +179,7 @@ GitHub remains durable project memory, but the tested Unity project can be newer
 
 ## Remaining evidence boundary
 
-Everything currently discussed/tested by Stef is reported working.
+Everything currently tested by Stef is reported working. The late-join scenario itself is not yet final-proven.
 
 A separate explicit Quest headset acceptance run is not documented in this chat. If a formal Quest release gate matters later, run and record that specific device proof instead of assuming it from PC/ClientSim evidence.
 
@@ -187,7 +187,7 @@ A separate explicit Quest headset acceptance run is not documented in this chat.
 
 ```text
 Presentation Service = LIVE
-Open Classroom Presentation = WORKING / BETA-READY
+Open Classroom Presentation = WORKING — FINAL LATE-JOIN TEST OPEN
 Reusable Presentation architecture = PROVEN IN CLASSROOM
 Art House Cinema Presentation integration = NEXT LATER TARGET
 ```
