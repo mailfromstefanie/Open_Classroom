@@ -479,3 +479,37 @@ Goal:
 ```
 
 Do not claim multiplayer or Quest acceptance from ClientSim.
+
+
+## FINAL IMPLEMENTATION STATUS — 2026-09-05
+
+The implementation described by this plan has now reached a working state in the real Open Classroom Unity project.
+
+Final reported/proven result:
+
+- standalone Core remains independent of VideoTXL;
+- one own `VRCUnityVideoPlayer`;
+- 10 slot catalog;
+- automatic slide count;
+- First / Previous / Next;
+- semantic sync with `modeActive`, `slotIndex`, `slideIndex`, `revision`;
+- real two-client sync works;
+- cross-client slide control works;
+- Presentation OFF/ON restores the same Presentation slide;
+- late join works;
+- VideoTXL local suspend/restore works;
+- existing physical screen reuse works;
+- projector visibility works;
+- custom shader remains;
+- brightness/contrast remain;
+- final screen-fit/display issue is reported resolved;
+- Presentation UI is integrated into the physical tablet;
+- `PresentationCore` is organized under `UIs/Managers`.
+
+Do not continue following the old staged implementation/testing order as if these gates were still open.
+
+Current authoritative acceptance snapshot:
+
+`PRESENTATION_ACCEPTANCE_2026-09-05.md`
+
+Quest-specific device proof remains a separate evidence question if formal headset release acceptance is needed later.
