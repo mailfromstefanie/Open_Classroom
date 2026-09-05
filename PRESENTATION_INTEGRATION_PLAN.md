@@ -1,170 +1,161 @@
-# Presentation Prefab / Classroom Integration Plan
+# Presentation Prefab / Open Classroom Integration Plan
 
 Last updated: 2026-09-05 (Europe/Amsterdam)
 
-## Status
+## STATUS
 
-**READY TO RESUME — architecture accepted; implementation temporarily parked by Stef's current website/editor/eReader work.**
+**OPEN CLASSROOM BETA-READY BY STEF'S CONFIRMATION — REUSABLE PREFAB PHASE ACTIVE NEXT**
 
-The hosted StefanieInVR Presentation Service Milestone 4 is accepted and live. The Classroom implementation may now begin.
+The hosted StefanieInVR Presentation Service is live.
 
-## Product contract
+Stef confirms the real Open Classroom Unity/world setup is already ready for beta testing with that service.
+
+Important repository boundary:
+
+- this GitHub snapshot does not currently contain a committed `PresentationController.cs`;
+- therefore the actual Unity scene must be inspected before any reconstruction or extraction;
+- older "create PresentationSystem from scratch" instructions are superseded for the next session.
+
+## PRODUCT CONTRACT
 
 Hosted service:
 
-- exactly 10 stable Presentation Slot MP4 URLs;
+- 10 stable Presentation Slot MP4 URLs;
+- PDF input;
 - one PDF slide = one second of video;
-- Slot 1 currently holds Stef's demo presentation;
-- hosted conversion is independent from the future prefab;
-- the future prefab must remain configurable so users can supply their own MP4 URLs/hosting.
+- Slot 1 may be used as Stef's demo;
+- hosted conversion is independent from the reusable prefab.
 
-## Classroom design decision
+Reusable prefab:
 
-Reuse the existing **VideoTXL 2.5.1 SyncPlayer and projector screen** instead of creating a second video player.
+- must not depend on Stef's hosting only;
+- must allow creators to configure their own compatible MP4 URLs/hosting;
+- should reuse an existing compatible VideoTXL player/screen rather than ship a duplicate player by default;
+- should be practical to place into another VRChat world, including later Art House Cinema integration.
 
-Add one dedicated VideoTXL Playlist source named conceptually:
+## ACCEPTED CLASSROOM ARCHITECTURE
 
-`Presentations`
-
-with exactly 10 entries:
-
-`Slot 1 ... Slot 10`
-
-Each entry points at the corresponding stable hosted MP4 URL.
-
-The custom Presentation controller talks to that Playlist and the existing SyncPlayer:
+Preserve unless real beta-ready scene inspection proves otherwise:
 
 ```text
-Presentation UI
--> PresentationController
--> VideoTXL Playlist._MoveTo(slotIndex)
--> existing SyncPlayer
--> existing projector/video screen
+Presentation UI / controller
+-> Presentation Playlist/source
+-> existing VideoTXL 2.5.1 SyncPlayer
+-> existing projector/screen
 
 Previous / Next
--> SyncPlayer._SetTargetTime(...)
--> one slide per second
--> shared synchronized video time
+-> synchronized seek
+-> one second per slide
 ```
 
-This keeps VideoTXL responsible for playback/synchronization, matching the existing Classroom responsibility split.
+Why:
 
-## Why this route
+- existing Classroom custom buttons already use VideoTXL playlist/source routing;
+- VideoTXL `SyncPlayer._SetTargetTime(float)` is the accepted synchronized seek path;
+- VideoTXL exposes runtime pause/time/seekability state;
+- `SyncPlayer._TriggerPause()` provides synchronized pause state;
+- the existing screen visibility helper can keep a paused slide visible.
 
-Verified from the current Classroom and VideoTXL source:
+Do not add a second AVPro/Unity player unless real testing proves this route cannot support the prefab.
 
-- existing custom buttons already use `Playlist._MoveTo(index)`;
-- VideoTXL 2.5.1 `SyncPlayer._SetTargetTime(float)` is a synchronized seek operation and takes player control through VideoTXL;
-- `SyncPlayer.paused`, `trackDuration`, `trackPosition` and `seekableSource` are exposed runtime state;
-- `SyncPlayer._TriggerPause()` synchronizes pause state;
-- existing `TXLScreenAutoVisibility` is already configured to keep the screen visible while paused, so a presentation slide can remain on screen.
+## USER-FACING V1 PREFAB CONTROLS
 
-Do not add a second AVPro/Unity player unless this proven route fails in real VRChat testing.
-
-## Version 1 controls
-
-Required:
+Target controls remain:
 
 - Slot 1 ... Slot 10 selection;
 - Previous slide;
 - Next slide;
 - First slide;
 - current slot label;
-- current slide / total slide count;
-- automatically pause after a presentation MP4 becomes seekable;
-- seek to the selected slide using one-second slide spacing;
-- keep controller slot/slide state synchronized for UI/late joiners;
-- no autoplay slideshow mode in V1.
+- current slide / total slides;
+- pause presentation once seekable;
+- synchronized slot/slide state where needed for shared use;
+- no autoplay slideshow in V1.
 
 Optional later:
 
-- last slide;
-- direct page number entry;
+- Last slide;
+- direct page entry;
 - autoplay/timer;
 - local pointer/laser;
-- owner/VIP-only control filtering;
+- configurable access filtering;
 - custom external URL entry;
 - eBook reuse.
 
-## Scene wiring target
+## PRESENTATION MODE / BACK TO VIDEO
 
-No destructive replacement of current Classroom playback systems.
-
-Create a separate root:
-
-`PresentationSystem`
-
-It will contain:
-
-- one `PresentationController` UdonSharp behaviour;
-- references to the existing VideoTXL `SyncPlayer`;
-- reference to the dedicated Presentation Playlist source;
-- optional reference to existing `VideoSourceUI`;
-- presentation control UI can live on the existing tablet/VIP panel.
-
-The existing projector mesh/screen and `TXLScreenAutoVisibility` remain unchanged.
-
-## Testing order
-
-1. Unity Editor/ClientSim-safe wiring check where possible.
-2. Load Slot 1 demo.
-3. Verify it pauses on slide 1.
-4. Previous/Next/First.
-5. Slot switching.
-6. real uploaded VRChat PC test.
-7. second-user sync.
-8. late join.
-9. Quest.
-10. only after proof package/generalize as reusable prefab.
-
-## Working rule
+Preferred polished behaviour:
 
 ```text
-one small scene change
+normal VideoTXL video
+-> enter Presentation Mode
+-> remember previous source/context + approximate time + pause/play state
+-> presentation uses same player/screen
+-> Back to Video
+-> restore previous source/time/play-pause state
+```
+
+However, for the current prefab phase:
+
+- first inspect whether the beta-ready Classroom already implements/proves this;
+- preserve proven behaviour;
+- if it is not implemented, treat exact source restoration as a separate proof step;
+- do not create a second player just to avoid understanding VideoTXL state restoration.
+
+## PREFAB EXTRACTION / HARDENING ROUTE
+
+The next phase is:
+
+1. inspect actual beta-ready Classroom presentation hierarchy;
+2. inventory every presentation-related GameObject/component/script;
+3. record exact VideoTXL/playlist/screen/UI references;
+4. identify what is Classroom-specific;
+5. identify what belongs inside the reusable prefab;
+6. create the smallest reusable boundary;
+7. expose configuration cleanly in Inspector;
+8. test the prefab without breaking the working Classroom;
+9. prove Slot 1 first;
+10. prove navigation;
+11. prove multiplayer/sync/late join as applicable;
+12. prove Quest;
+13. only then call the prefab reusable.
+
+## FIRST NEXT-CHAT GATE
+
+Before writing or moving anything:
+
+```text
+Unity out of Play Mode
+-> inspect current presentation hierarchy
+-> inspect components/scripts/references
+-> change nothing
+```
+
+This gate exists because the real scene is newer than the repository snapshot.
+
+## TESTING ORDER
+
+After a reusable boundary exists:
+
+1. no-error Editor wiring check;
+2. Slot 1 demo;
+3. pause on intended first slide;
+4. Previous / Next / First;
+5. slot switching;
+6. Back to Video if part of current proven scope;
+7. uploaded VRChat PC;
+8. second user;
+9. late join;
+10. Quest;
+11. package documentation.
+
+## WORKING RULE
+
+```text
+one tiny inspected change
 -> test
--> next full script/file
--> wire exact Inspector references
--> real VRChat multiplayer proof
--> record result
+-> record proof
+-> next change
 ```
 
-Stef receives full scripts, not partial code fragments.
-
-## Presentation Mode — restore previous video
-
-Accepted design decision:
-
-When Presentation Mode starts, the controller should remember the current VideoTXL playback context before replacing it with a Presentation Slot.
-
-Target behaviour:
-
-```text
-normal VideoTXL video playing
--> start Presentation Mode
--> remember previous VideoTXL source/context + approximate playback time + pause/play state
--> load selected Presentation Slot
--> presentation navigation uses the same SyncPlayer/screen
--> press Back to Video
--> restore the previous VideoTXL source
--> seek back to the remembered time
--> restore the previous pause/play state
-```
-
-Implementation note:
-
-Use the existing VideoTXL 2.5.1 runtime state/API where possible. Do not create a second player merely to preserve the old video. First prove source/time restoration with the real Classroom wiring; only then generalize/package it.
-
-This feature is part of the intended polished Classroom Presentation Mode, not an optional future idea.
-
-
-## Scheduling note — 2026-09-05
-
-This plan remains authoritative for the first Classroom Presentation proof.
-
-Implementation is temporarily parked while Stef completes:
-
-1. public website + translation baseline cleanup;
-2. local Website Editor work;
-3. eReader/eBook design.
-
-Do not reinterpret this pause as a redesign or cancellation.
+Stef receives complete scripts, never code fragments.
