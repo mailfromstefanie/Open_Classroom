@@ -28,10 +28,11 @@ Later target:
 
 - Presentation Service Free Beta is live.
 - Website refresh is live.
-- Stef confirms Open Classroom is already ready for beta testing with the Presentation Service.
-- The reusable Presentation prefab is the active next task.
-- The repository does not currently contain a committed `PresentationController.cs`, so the real Unity scene is newer or contains setup not yet captured in GitHub.
-- Do not rebuild the Classroom presentation system from an old plan.
+- Stef confirms the previous Presentation integration in Open Classroom has been dismantled.
+- Do not describe the current Classroom as beta-ready with the Presentation Service.
+- Rebuilding the Classroom Presentation integration is the active next task; prefab hardening comes after a working path is proven.
+- The repository does not currently contain a committed `PresentationController.cs`.
+- Reuse the existing VideoTXL player/screen foundation; do not add a duplicate player by default.
 
 Real Unity project:
 
@@ -52,31 +53,32 @@ Real Unity project:
 
 Ask Stef to make sure Unity is OUT OF PLAY MODE.
 
-Then inspect the current presentation-related hierarchy and components in the real Classroom scene.
+Then inspect the real Classroom scene around the existing VideoTXL player, projector/screen, playlist/source objects and tablet UI.
 
-The first goal is only to learn what is already working:
-
-- slot selection;
-- Previous / Next / First;
-- slide/page state;
-- pause/seek;
-- VideoTXL integration;
-- projector/screen references;
-- Back to Video if present;
-- tablet/access UI wiring.
+The first goal is to learn what foundation remains after the previous Presentation setup was dismantled.
 
 CHANGE NOTHING until that inventory is clear.
+
+After that, rebuild the smallest working path in this order:
+
+- one Presentation Slot through the existing VideoTXL player/screen;
+- pause/seek;
+- Previous / Next / First;
+- slide/page state;
+- additional slots;
+- Back to Video only after the core path is proven;
+- then reusable prefab hardening.
 
 ## Prefab goal
 
 ```text
-working beta-ready Classroom presentation setup
+current Classroom VideoTXL/player/screen foundation
+-> rebuild one working Presentation Slot
+-> prove navigation
 -> identify reusable boundary
 -> preserve VideoTXL/player/screen architecture
 -> separate scene-specific references
 -> expose clean prefab configuration
--> test Slot 1
--> test navigation
 -> test shared/multiplayer behaviour
 -> test Quest
 -> package for later Cinema/other-world reuse
