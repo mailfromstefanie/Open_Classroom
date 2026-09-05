@@ -58,6 +58,26 @@ Why:
 
 Do not add a second AVPro/Unity player unless real testing proves this route cannot support the prefab.
 
+## VERIFIED LOCAL VIDEOTXL 2.5.1 PACKAGE EVIDENCE — 2026-09-05
+
+Stef supplied both official 2.5.1 archives:
+
+- `VideoTXL-2.5.1.zip` (full repository source archive)
+- `com.texelsaur.video-2.5.1.zip` (release package archive)
+
+The following core files were compared byte-for-byte and are identical between the two archives:
+
+- `SyncPlayer.cs`
+- `TXLVideoPlayer.cs`
+- `Playlist.cs`
+- `PlaylistData.cs`
+- `SourceManager.cs`
+- `VideoManager.cs`
+
+Both archives report package version `2.5.1`.
+
+For Presentation implementation decisions, use the 2.5.1 package/source behaviour as authoritative rather than current `main` / 2.6 beta behaviour.
+
 ## EXACT VIDEOTXL 2.5.1 SOURCE FINDINGS — 2026-09-05
 
 Official upstream source inspected at tag `2.5.1` in `vrctxl/VideoTXL`.
