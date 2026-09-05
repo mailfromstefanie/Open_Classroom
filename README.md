@@ -15,25 +15,38 @@ Read in this order:
 
 The repository is project memory and backup/reference evidence from the real Unity scene. Do not assume GitHub scene state is newer than Stef's tested Unity scene unless `CURRENT_WORK.md` says so.
 
-## Current next phase — 2026-09-05
+## Current active phase — 2026-09-05
 
-The previous Classroom Presentation integration has been dismantled.
+The standalone Presentation Core is now implemented in the real Unity project and the Open Classroom VideoTXL 2.5.1 adapter is substantially working in ClientSim.
 
-The active direction is now:
+Current order:
 
 ```text
-standalone Presentation Core
--> one own VRCUnityVideoPlayer
--> own rollout screen by default
--> sync only mode + slot + slide + revision
--> local seek/pause on every client
--> optional VideoTXL integration for Stef's Classroom
+fix Presentation physical-screen fill/aspect
+-> real multiplayer sync
+-> late join / early-start
+-> Quest
+-> reusable prefab hardening
+-> later Cinema integration
 ```
 
-Do not treat the current Classroom as already beta-ready with the Presentation Service.
+Preserve:
 
-Do not start by rebuilding the older VideoTXL Presentation Playlist design; that architecture is superseded for the reusable product.
+- Core independence from VideoTXL;
+- sync only mode + slot + slide + revision;
+- local load/seek/pause per client;
+- existing projector visibility;
+- existing custom screen shader;
+- existing brightness/contrast controls.
 
-Research material for the standalone player belongs in:
+The old VideoTXL Presentation Playlist design remains superseded.
+
+For exact current truth read `CURRENT_WORK.md`.
+
+Detailed latest handoff:
+
+`SESSION_HANDOFF_2026-09-05_PRESENTATION.md`
+
+Research material remains under:
 
 `docs/research/standalone-presentation-player/`
