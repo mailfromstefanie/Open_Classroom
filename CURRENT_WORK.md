@@ -1,24 +1,26 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-05 Europe/Amsterdam
+Last updated: 2026-09-08 Europe/Amsterdam
 
 ## AUTHORITATIVE CURRENT STATUS
 
-**Open Classroom currently has two important working tracks: the Presentation system is beta-ready, and the new multi-e-reader/library system has a ClientSim-working first implementation.**
+**Open Classroom is now functionally very close to complete.**
 
-Presentation:
-- end-to-end current test pass complete;
-- late join proven;
-- VideoTXL adapter/restoration working.
+Protected working baseline:
+- Presentation system = working / beta-ready;
+- VideoTXL 2.5.1 integration = working and must remain pinned;
+- VRCDN livestream route = investigated with real VRChat logs / Build & Run, not ClientSim;
+- e-reader/library = substantially refined and now includes per-user PlayerData persistence for reading progress;
+- five Marker Pro objects = dedicated shared reset points added;
+- fresh offline and OneDrive backups exist after the latest stabilization work.
 
-E-reader/library:
-- multi-book local playback architecture implemented;
-- ClientSim functionality working;
-- real headset handedness, real two-player proof and Quest profiling still open.
+The only currently planned Classroom feature additions are:
+1. persistent synchronized entrance text;
+2. one persistent synchronized movable poster with a persistent image URL.
 
-The earlier standalone Presentation-Core redesign and the Open Classroom VideoTXL 2.5.1 integration have both reached a working state.
+Before those are built, run one narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset.
 
-Do not reopen solved architecture questions or old blockers unless new evidence appears.
+Do not reopen solved architecture questions or broad performance work unless new evidence appears.
 
 ## REAL UNITY PROJECT
 
@@ -26,15 +28,38 @@ Use:
 
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
-Do not confuse it with the older checkout:
+Do not confuse it with older checkouts.
 
-`E:/GitHub/Open_Classroom`
+The tested real Unity project remains the strongest source of truth for current scene wiring.
 
-The real tested Unity project remains the strongest source of truth for current scene wiring.
+## LATEST RECOVERY POINT — 2026-09-08
 
-Stef made a full backup of the complete Unity project folder on 2026-09-05, including a fresh backup after the final screen-size fix and successful late-join proof.
+Stef created:
+- one fresh offline full backup;
+- one online OneDrive backup;
+- intermediate backups during major changes;
+- screenshots of the old/new e-reader UI.
 
-## FINAL ACCEPTED PRESENTATION ARCHITECTURE
+Treat this as the current strong recovery point.
+
+Do not overwrite/discard it casually.
+
+## LATEST WORKLOG
+
+Read:
+
+`WORKLOG_2026-09-08.md`
+
+It records:
+- VRCDN / AVPro investigation;
+- e-reader UX changes;
+- e-reader PlayerData persistence;
+- Marker Pro reset extension;
+- backup state;
+- remaining multiplayer acceptance;
+- final planned Entrance Text and Poster features.
+
+## PRESENTATION — ACCEPTED WORKING BASELINE
 
 Reusable Core:
 
@@ -59,450 +84,282 @@ Presentation Core
 -> existing brightness/contrast system
 ```
 
+Only semantic Presentation fields are synchronized:
+- `modeActive`;
+- `slotIndex`;
+- `slideIndex`;
+- `revision`.
+
+Proven Presentation behaviour includes:
+- 10 slots;
+- First / Previous / Next;
+- two-client synchronization;
+- cross-client slide control;
+- OFF/ON sync;
+- same slot/slide restored after re-entry;
+- late join;
+- VideoTXL local suspend/restore;
+- projector visibility;
+- brightness/contrast;
+- physical screen output;
+- tablet UI integration.
+
+Detailed acceptance:
+
+`PRESENTATION_ACCEPTANCE_2026-09-05.md`
+
 The old VideoTXL Presentation Playlist design remains superseded.
 
 Do not recreate it.
 
-## SYNC MODEL — PROVEN
+## VIDEOTXL 2.5.1 — PROTECTED WORKING BASELINE
 
-Only these semantic fields are synchronized:
+Keep the exact checked-in VideoTXL 2.5.1.
 
-```text
-modeActive
-slotIndex
-slideIndex
-revision
-```
+During Presentation:
+- set `SyncPlayer.LocalPlaybackEnabled = false` locally;
+- do not mutate VideoTXL's synchronized pause/play state;
+- do not use `_TriggerPause()` as the local suspend API;
+- do not use raw internal `BaseVRCVideoPlayer.Stop()` as the integration contract.
 
-Every client performs media playback locally.
+On exit:
+- restore previous screen state;
+- set `LocalPlaybackEnabled = true`;
+- allow VideoTXL to restore/resync using its own supported path.
 
-Proven two-client behavior:
+### Closed SourceManager incident
 
-- Presentation ON synchronizes to the other client;
-- selected slot/slide synchronizes;
-- Next/Previous changes synchronize;
-- another client can issue a slide command and the first client follows;
-- Presentation OFF synchronizes;
-- both clients restore normal VideoTXL playback to the same corresponding video position;
-- Presentation re-entry preserves the selected Presentation slot and slide.
-
-## RESUME BEHAVIOR — PROVEN
-
-Accepted behavior:
-
-```text
-Presentation on slide N
--> Presentation OFF
--> normal VideoTXL resumes
--> Presentation ON again
--> Presentation returns to the same slot and same slide N
-```
-
-A deliberately selected different slot still starts at slide 1.
-
-Implementation rule:
-
-- Stop does not reset synced `slotIndex` or `slideIndex`;
-- Start/Toggle reuses valid saved slot/slide state;
-- SelectSlot intentionally sets `slideIndex = 0`.
-
-The several-second delay when re-entering Presentation is currently accepted because the Presentation player is actually stopped while inactive and must load the MP4 again. This keeps the design aligned with the Quest goal of not intentionally holding two active playback pipelines.
-
-## LATE JOIN — PROVEN
-
-Stef completed the final late-join test successfully.
-
-Proven behavior:
-
-```text
-Client 1 already in Presentation Mode on a later slide
--> Client 2 joins afterward
--> Client 2 automatically enters Presentation Mode
--> Client 2 reconstructs the same slot + slide
--> authoritative Presentation state is not reset
-```
-
-This closes the remaining Presentation-specific multiplayer test gate for the current Open Classroom implementation.
-
-## VIDEOTXL 2.5.1 ADAPTER — WORKING
-
-Normal mode:
-
-```text
-Presentation OFF
--> VideoTXL LocalPlaybackEnabled = true
--> normal VideoTXL output
-```
-
-Presentation mode:
-
-```text
-Presentation ON
--> locally set SyncPlayer.LocalPlaybackEnabled = false
--> do not mutate VideoTXL synchronized pause/play state
--> Presentation player loads/seeks/pauses locally
--> Presentation output goes to RT_PresentationVideo
--> ScreenManager routes it to the existing physical TXL screen
-```
-
-Exit:
-
-```text
-Presentation OFF
--> restore previous VideoTXL display state
--> LocalPlaybackEnabled = true
--> VideoTXL restores/resyncs through its own supported logic
-```
-
-Hard rules:
-
-- do not use VideoTXL `_TriggerPause()` as the local suspend API;
-- do not use raw internal `BaseVRCVideoPlayer.Stop()` as the integration contract;
-- keep using the exact checked-in VideoTXL 2.5.1 source under `REFERENCE/VideoTXL_2.5.1/`.
-
-## VIDEOTXL SOURCEMANAGER INCIDENT — CLOSED
-
-The temporary failure of all ordinary VideoTXL playlists was caused by one stale null element in `SourceManager.sources` left after dismantling the old Presentation playlist.
+A stale null entry left after the removed Presentation playlist once broke all ordinary playlists.
 
 It was removed.
 
-Current preserved result:
-
-- 21 valid VideoTXL sources;
-- normal VideoTXL initializes again;
-- this was not a conflict between the two video players.
-
 Do not reopen this incident without new evidence.
+
+## VRCDN / AVPRO — LATEST EVIDENCE
+
+The 7/8 September livestream investigation produced an important test rule:
+
+**ClientSim is not a valid AVPro / VRCDN playback acceptance environment.**
+
+ClientSim's AVPro player is stubbed, so an AVPro livestream remaining in Loading there does not prove a VideoTXL or VRCDN defect.
+
+Real VRChat Build & Run logs showed:
+- VideoTXL selecting AVPro 1080p low-latency;
+- the VRCdn stream route opening through the intended AVPro path;
+- the physical video-wall renderer had become disabled and was re-enabled;
+- warnings may occur for allowed domains and temporary rate limiting when switching videos too rapidly.
+
+Protect:
+- normal VideoTXL playback;
+- VRCDN route;
+- existing screen/display system;
+- exact VideoTXL 2.5.1.
+
+Do not change VideoTXL based only on ClientSim AVPro behaviour.
 
 ## PHYSICAL SCREEN / DISPLAY — WORKING
 
-The final screen/display issue is now reported solved in the real Unity project.
-
-Preserve the working display chain:
-
+Preserve:
 - existing physical `VideoScreen (quest)`;
-- existing `VideoTXL/Unlit` screen material/shader;
-- existing VideoTXL ScreenManager;
-- existing projector open/close visibility behavior;
-- existing renderer/collider handling;
-- existing brightness/contrast controls;
+- current VideoTXL/Unlit-based material/shader;
+- ScreenManager path;
+- projector visibility behaviour;
+- renderer/collider handling;
+- brightness/contrast controls;
 - Presentation RenderTexture path.
 
-Important known source dimensions from the final investigation:
+Do not blindly reapply old screen-fit experiments.
 
-- demo Presentation MP4: 1280x720, 16:9;
-- `RT_PresentationVideo`: 1920x1080, 16:9;
-- VideoTXL CRT: 1920x1080, target aspect ~1.777777.
+## MULTI E-READER / LIBRARY — CURRENT 2026-09-08 STATUS
 
-The exact final working scene setting is authoritative. Do not blindly reapply older speculative screen-fit experiments.
-
-## SCREEN READABILITY / PROJECTOR — WORKING
-
-Proven preserved behavior:
-
-- projector close/open controls the physical screen as intended;
-- Presentation follows the same physical display path;
-- brightness/contrast sliders affect Presentation;
-- readability Reset works;
-- normal VideoTXL still works afterward.
-
-Do not replace the custom screen material or bypass these existing systems.
-
-## TABLET / HIERARCHY CLEANUP — FINAL CURRENT ORGANIZATION
-
-Stef cleaned up the scene hierarchy after the functional tests:
-
-- `PresentationCore` now lives under `UIs/Managers`;
-- Presentation UI/canvas content was moved into the physical tablet;
-- the controls still work after this reorganization.
-
-Treat this as the preferred current scene organization.
-
-Moving `PresentationCore` under Managers is organizational only; the reusable Core architecture remains standalone.
-
-## CURRENT PRESENTATION CORE FEATURES
-
-Working current feature set includes:
-
-- 10 configurable Presentation Slot URLs;
-- own `VRCUnityVideoPlayer`;
-- automatic slide count from MP4 duration;
-- Start / Stop;
-- Slot selection;
-- First;
-- Previous;
-- Next;
-- current state feedback;
-- local seek/pause;
-- same-slot media reuse while active;
-- synchronized semantic state;
-- resume same slide after Presentation OFF/ON;
-- VideoTXL local suspension/restore;
-- reuse of the existing physical projector screen.
-
-## TEST / ACCEPTANCE SUMMARY — 2026-09-05
-
-Reported working:
-
-- local Presentation playback;
-- automatic 15-slide detection on the current demo;
-- First / Previous / Next;
-- two-client Presentation synchronization;
-- cross-client slide control;
-- Presentation OFF/ON sync;
-- VideoTXL restore on both clients;
-- same Presentation slide restored after re-entry;
-- late join behavior;
-- projector visibility behavior;
-- brightness/contrast behavior;
-- physical screen Presentation output;
-- tablet UI after hierarchy cleanup.
-
-Detailed final handoff:
-
-`PRESENTATION_ACCEPTANCE_2026-09-05.md`
-
-Quest-specific device evidence is not separately documented in this chat. Do not invent a Quest PASS if a future release decision requires explicit headset proof.
-
-## LIVE HOSTED SERVICE CONTRACT
-
-Cross-project truth from `mailfromstefanie/StefanieInVR-Presentation-Service`:
-
-- ten-slot Presentation Service Free Beta = LIVE;
-- hosted input = PDF;
-- one slide = one second;
-- stable slot MP4 URLs;
-- current live uploader uses the proven slot-code flow;
-- prepared Username-only dashboard is not live.
-
-Open Classroom Presentation has completed the current functional/multiplayer test pass and is ready to enter beta use in the Classroom.
-
-## CURRENT CROSS-PROJECT STATE
+Architecture remains:
 
 ```text
-Presentation Service: LIVE
-Open Classroom Presentation: WORKING / BETA-READY
-Reusable Presentation architecture: PROVEN IN CLASSROOM IMPLEMENTATION; SELLABLE PREFAB PRODUCTIZATION STILL TO DO
-Art House Cinema Presentation integration: NOT YET DONE
+one local EReaderLocalPlaybackManager
+-> one VRCUnityVideoPlayer
+-> one shared RT_EReader
+-> multiple lightweight physical EReaderBook instances
 ```
 
-The next Presentation product phase after beta testing is **not Cinema yet**.
+Preserve:
+- physical VRC Pickup + kinematic Rigidbody + VRCObjectSync;
+- one shared playback pipeline;
+- last-touched-wins local arbitration;
+- inactive screen/player shutdown;
+- reset/toggle integration;
+- Presentation/VideoTXL separation.
 
-Required order:
+### Latest UX changes
+
+Reported implemented:
+- desktop/mobile controls remain open after release;
+- visible pickup highlights added on the sides;
+- larger controls with stronger contrast;
+- hover and pressed states;
+- compact navigation symbols (`|<`, `<`, `>`);
+- simplified page display;
+- local automatic close after more than about 30 seconds farther than about one metre from the reader.
+
+### PlayerData persistence — new
+
+Last-read page is now stored using VRChat PlayerData.
+
+Current intended/reported semantics:
+- storage is per user;
+- both physical e-readers use the same storage key/code;
+- both readers therefore share that user's reading progress;
+- this is personal persistence, not shared page synchronization.
+
+This existing implementation is the preferred in-project reference for future PlayerData usage.
+
+Do not invent a separate persistence framework unless needed.
+
+### Remaining e-reader acceptance
+
+Still recommended before the final new features:
+- real two-user/multiplayer check of PlayerData behaviour;
+- reconnect/re-entry persistence check where practical;
+- confirm both readers share the same user's saved page as intended.
+
+Quest profiling remains a separate future release/performance evidence question; do not fabricate a Quest PASS.
+
+## MARKER PRO RESET — NEW
+
+Five Marker Pro objects now have dedicated reset points.
+
+Reported global reset behaviour:
+- force/release as needed;
+- return to original position;
+- restore original rotation;
+- shared result intended for everyone.
+
+A final two-user multiplayer check is still recommended.
+
+## EXACT NEXT SESSION
+
+Do **not** begin with performance optimization.
+
+Do **not** rebuild Presentation, VideoTXL, the e-reader or table screens.
+
+First action:
 
 ```text
-finish beta test phase
--> harden/clean the reusable Presentation package
--> create the actual distributable/sellable prefab
--> remove Classroom-specific assumptions from the sale package
--> provide creator-facing setup/configuration
--> package documentation + install/setup instructions
--> version/release the commercial/free product package
--> only then treat the prefab as a finished product for external customers
+RUN ONE NARROW REAL MULTIPLAYER ACCEPTANCE PASS
 ```
 
-Art House Cinema is a later integration target for the proven product and keeps its own control/menu/reset/admin return route.
+Check:
+1. e-reader PlayerData last-page persistence;
+2. both physical e-readers share the same user's stored progress;
+3. Marker Pro global reset is seen correctly by both users;
+4. optional late join if useful.
+
+If this passes:
+- record the result as the golden Classroom baseline;
+- keep the offline + OneDrive backups;
+- then begin the two final customization features.
+
+## FINAL FEATURE 1 — PERSISTENT ENTRANCE TEXT
+
+Desired UX:
+- teacher enters custom entrance text;
+- explicit Apply/Save;
+- text persists for that teacher across sessions;
+- when that teacher establishes a new Classroom instance, their saved text can become the current instance text;
+- everyone present and later joiners see the same current text;
+- include Reset to Default.
+
+Preferred responsibility split:
+
+```text
+PlayerData
+= teacher's personal saved text
+
+small synced instance state
+= current entrance text shown to everyone
+```
+
+Important:
+- wait for persistent data restoration before reading PlayerData;
+- do not save on every keystroke;
+- keep networking authority small and explicit;
+- test real multiplayer + late join.
+
+## FINAL FEATURE 2 — PERSISTENT SYNCHRONIZED MOVABLE POSTER
+
+Desired UX:
+- one poster object;
+- teacher pastes a direct image URL (own server or supported host);
+- poster displays that image;
+- pickup interaction should feel like the current e-reader;
+- can be placed anywhere;
+- one simple slider changes uniform scale;
+- position/rotation/scale are synchronized to the instance;
+- late joiners see the current poster;
+- teacher's configuration persists for future sessions.
+
+Preferred persistent fields:
+- image URL;
+- position;
+- rotation;
+- uniform scale.
+
+Preferred separation:
+
+```text
+PlayerData
+= teacher's saved poster configuration
+
+synced runtime state / ownership
+= poster currently active in this instance
+```
+
+Reuse only as references:
+- e-reader = pickup feel + PlayerData pattern;
+- local table screens = UI visual language + scale concept only;
+- Marker/reset infrastructure = reset/ownership reference where appropriate.
+
+Hard boundary:
+- do NOT convert or rewrite the working local table screens;
+- do NOT couple poster to VideoTXL or Presentation without evidence;
+- do NOT refactor e-reader to make the poster;
+- smallest isolated manager/component family only.
+
+## CROSS-PROJECT STATE
+
+```text
+Presentation Service = LIVE
+Open Classroom Presentation = WORKING / BETA-READY
+Open Classroom overall = VERY CLOSE TO COMPLETE
+Reusable Presentation architecture = PROVEN IN CLASSROOM
+Sellable Presentation prefab = productization later
+Art House Cinema Presentation integration = NOT YET DONE
+```
+
+Hosted-service truth:
+`mailfromstefanie/StefanieInVR-Presentation-Service`
+
+Cinema return route:
+`mailfromstefanie/Stefanies-Art-House-Cinema`
 
 ## WORKING STYLE WITH STEF
 
 - Dutch;
 - beginner-friendly;
-- build quickly;
-- avoid ceremonial retesting of already-proven behavior;
-- use tests at meaningful risk gates;
+- one small technical action at a time;
+- inspect before changing;
+- backup-first at meaningful risk gates;
+- do not ceremonially retest solved systems;
 - complete scripts, never fragments;
-- inspect before destructive changes;
-- Codex/Sol is a bounded implementation/debugging worker when needed;
-- normal ChatGPT/Nova remains orchestrator;
+- protect working systems from adjacent feature work;
+- Codex is implementation/debugging worker;
+- Nova/ChatGPT is orchestrator/project memory keeper;
 - update GitHub after meaningful proof or project transitions.
 
 ## GITHUB TRUTH RULE
 
 GitHub is durable project memory.
 
-The tested Unity scene can be newer than copied source/reference files in this repository.
+The tested Unity scene may still be newer than copied source/reference files.
 
-Never overwrite known working Unity scene truth with an older GitHub planning assumption.
+Never overwrite known working real-scene truth with older planning assumptions.
 
-
-## MULTI E-READER / LIBRARY — IMPLEMENTED IN REAL UNITY PROJECT
-
-Codex completed the first reusable multi-e-reader/library implementation in the real Unity project.
-
-Current architecture:
-
-```text
-one local EReaderLocalPlaybackManager
--> one VRCUnityVideoPlayer
--> one shared RT_EReader
--> many lightweight EReaderBook instances
-```
-
-Current scene examples:
-
-- `Book_A`
-- `Book_B`
-- `Book_A_Home`
-- `Book_B_Home`
-
-Hierarchy:
-
-```text
-UIs/Managers/EReader Local Playback Manager
-Other Toggles and Systems/E-Reader/
-  Book_A
-  Book_B
-  Book_A_Home
-  Book_B_Home
-```
-
-Important implementation facts:
-
-- each book has its own URL/title/local page state;
-- reading state is local only;
-- physical pickup uses VRC Pickup + kinematic Rigidbody + VRCObjectSync;
-- Auto Hold enabled;
-- orientation = Any;
-- one shared e-reader player and RenderTexture only;
-- inactive books disable their Canvas and screen renderer;
-- idle e-reader player is stopped;
-- no per-book video player;
-- no per-book `Update()`;
-- existing Canvas physical fit was preserved at 160 x 15 with scale 0.001;
-- existing ResettableObject infrastructure is reused;
-- Reset Group 6 is the intended book reset group;
-- Presentation and VideoTXL scripts were not modified.
-
-### E-reader controls
-
-Current compact local controls:
-
-```text
-First
--10
-Prev
-Page X / Y
-Next
-+10
-Keep Open
-X
-```
-
-Current media contract remains one page/spread per second.
-
-### Keep Open / last-touched-wins
-
-Local behavior:
-
-- Keep Open OFF + drop -> reader Canvas/screen/player closes;
-- Keep Open ON + drop -> current book remains locally active where placed;
-- activating another book always closes the previously active local reader;
-- X closes the reader and disables Keep Open;
-- stale callbacks from a prior book are ignored;
-- only the latest locally activated book may own/show the shared e-reader output.
-
-### Local bookmark behavior
-
-The last local page is remembered per book for the current world session and restored when that book is reopened.
-
-No page/bookmark/Keep Open/active-reader state is network-synchronized.
-
-### Current ClientSim proof
-
-Reported working:
-
-- real MP4 loaded and 213 pages detected;
-- Loading state;
-- First / Previous / Next / +/-10;
-- page bounds;
-- local last-page restore;
-- Keep Open ON/OFF drop behavior;
-- Book A -> Book B arbitration;
-- rapid switching while a prior URL is still loading;
-- stale load callback protection;
-- toggle OFF closes active reader;
-- Reset returns Book B exactly to Home;
-- inactive screen renderers/player stop correctly;
-- existing Presentation Slot 1 still loads/pauses;
-- Presentation stop restores physical screen and local VideoTXL playback;
-- Unity compile clean / no compile errors.
-
-### E-reader evidence still open
-
-Do NOT mark these as proven yet:
-
-1. real headset left/right-hand comfort and orientation;
-2. real two-player VRChat proof of physical VRCObjectSync plus independent local reading sessions;
-3. Quest device profiling/performance proof.
-
-The structure is Quest-oriented, but no formal Quest profiler/device PASS exists yet.
-
-### E-reader source changes reported by Codex
-
-Real project changes include:
-
-- `Assets/Ereader/EReaderLocalPlaybackManager.cs`
-- `Assets/Ereader/EReaderBook.cs`
-- corresponding UdonSharp program assets;
-- `Assets/#Classroom/Scenes/Classroom.unity`
-
-Old `LocalEReader.cs` / orphaned `LocalEReader.asset` were removed.
-
-The tested real Unity project remains authoritative until these local changes are deliberately mirrored/committed as source snapshots.
-
-
-## PERFORMANCE AUDIT — 2026-09-05
-
-A targeted read-only performance analysis was completed after the e-reader work.
-
-Current important findings:
-
-- idle desktop ClientSim CPU/Udon/UI/geometry costs are low;
-- e-reader and VideoTXL Quest RenderTextures currently use 2x MSAA + automatic mipmaps and are candidates for focused optimization;
-- large transparent Graphlit glass is the main likely Quest fill-rate risk;
-- three NPOT posters account for about 69 MB reported uncompressed PC texture memory;
-- `M_EReaderScreen.mat` has a suspicious emission reference to `VideoTXLCRT-Quest`;
-- no performance changes were applied during the audit;
-- scene was left clean, out of Play Mode, with no errors.
-
-Read before performance changes:
-
-`PERFORMANCE_AUDIT_2026-09-05.md`
-
-Optimization order is deliberately conservative: e-reader material -> e-reader RT -> VideoTXL RT -> real Quest evidence -> only then glass/material redesign.
-
-
-## EXACT NEXT SESSION — BACKUP FIRST
-
-No more changes are planned tonight.
-
-Before the next performance/cleanup round, Stef will make a **fresh full backup of the current working Unity project including the new multi-e-reader implementation**.
-
-Important distinction:
-
-- the earlier full backup protects the accepted Presentation state;
-- the new e-reader implementation was added afterward;
-- therefore a new backup is required before touching RenderTexture/material performance settings.
-
-After that backup, the next narrow optimization round is:
-
-```text
-verify/fix M_EReaderScreen emission mapping
--> validate e-reader
--> RT_EReader: 1x MSAA + automatic mipmaps OFF
--> validate e-reader
--> VideoTXLCRT-Quest: 1x MSAA + automatic mipmaps OFF
--> validate VideoTXL
--> validate Presentation takeover/restore
--> STOP
-```
-
-Do not include transparent glass, poster normalization or Presentation RenderTexture changes in that same round.
-
-Detailed e-reader handoff:
-
-`EREADER_LIBRARY_HANDOFF_2026-09-05.md`
-
-Detailed performance audit:
-
-`PERFORMANCE_AUDIT_2026-09-05.md`
