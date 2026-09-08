@@ -15,7 +15,7 @@ Protected working baseline:
 - fresh offline and OneDrive backups exist after the latest stabilization work.
 
 The only currently planned Classroom feature additions are:
-1. persistent synchronized entrance text — V1 implemented and saved; local compile/smoke checks pass; real VRChat multiplayer/persistence acceptance still open;
+1. persistent synchronized entrance text — V1 implemented and saved; real VRChat build run indicates personal text persistence appears to work for Stef; shared two-client visibility/late-join/host-leave acceptance still open; title editing (`Text (Kop)`) is a pending V1.1 extension;
 2. one persistent synchronized movable poster with a persistent image URL.
 
 The narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset is still open. Do not lose that test obligation while Entrance Text implementation proceeds.
@@ -352,9 +352,21 @@ Reported local proof:
 - `Collider_Entrance`, Open button, Presentation, VideoTXL and unrelated systems were not changed;
 - Unity scene reported saved/clean after implementation.
 
-Evidence boundary:
-- real VRChat multiplayer, late join, host-departure persistence, Group/Public Claim/Start and PlayerData-across-instances are **not yet accepted**;
-- do not call Entrance Text V1 beta-proven until those real-client tests pass.
+Evidence update — 2026-09-09 real VRChat build:
+- Stef performed a real VRChat build/test after implementation;
+- for as far as she could verify in that test, the entrance body text persisted after leaving/returning;
+- treat this as **positive single-user persistence evidence**, not full multiplayer acceptance;
+- shared visibility to another player has not yet been tested;
+- late join, host-departure shared-state survival, Group/Public Claim/Start and two-client synchronization are still open;
+- do not call Entrance Text V1 fully beta-proven until those specific real-client tests pass.
+
+Pending V1.1 requirement discovered after the build:
+- the entrance title `Text (Kop)` must also become editable/persistent/synchronized;
+- title and body should be edited separately but published/saved together through the same entrance-text system;
+- preserve the existing `Text (Kop)` display object;
+- keep the current body-text implementation and authority model;
+- do not rebuild the feature from scratch;
+- add a small title input and corresponding PlayerData/synced state with a sensible shorter title limit.
 
 ## FINAL FEATURE 2 — PERSISTENT SYNCHRONIZED MOVABLE POSTER
 
