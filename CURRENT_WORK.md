@@ -15,7 +15,7 @@ Protected working baseline:
 - fresh offline and OneDrive backups exist after the latest stabilization work.
 
 The only currently planned Classroom feature additions are:
-1. persistent synchronized entrance text — investigation/plan complete, V1 implementation now approved to start;
+1. persistent synchronized entrance text — V1 implemented and saved; local compile/smoke checks pass; real VRChat multiplayer/persistence acceptance still open;
 2. one persistent synchronized movable poster with a persistent image URL.
 
 The narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset is still open. Do not lose that test obligation while Entrance Text implementation proceeds.
@@ -332,17 +332,29 @@ Initial validation target:
 - plain text;
 - Reset loads default into the draft and still requires Apply / Save.
 
-Stef has already made a fresh full backup and has authorized Codex to implement V1.
+V1 is now implemented and saved in the real Unity project.
 
-Implementation constraints:
-- token-efficient;
-- no repeat broad investigation;
-- no broad refactor;
-- complete scripts;
-- preserve Canvas/Open/collider behaviour;
-- do not modify Presentation, VideoTXL 2.5.1, VRCDN, projector, e-readers, table screens, Marker Pro or unrelated reset/tablet systems;
-- local/ClientSim checks may be used for wiring only;
-- do not claim real multiplayer / late-join / persistence PASS without real-client proof.
+Reported implementation:
+- `Assets/!StefanieInVR/Scripts/Managers/EntranceTextManager.cs`;
+- `Assets/!StefanieInVR/Scripts/Managers/EntranceTextEditorUI.cs`;
+- required UdonSharp assets;
+- scene updated at `Assets/#Classroom/Scenes/Classroom.unity`;
+- added `UIs/Managers/Entrance Text Manager`;
+- added `VipContentRoot/Entrance Text Editor`;
+- editor includes TMP input, Apply/Save, Load Default, Claim/Start and status text;
+- `Text (Alinea)`, `VipAccessManager`, editor references and button events are wired;
+- validation = 400 characters / max 9 lines / whitespace falls back to default.
+
+Reported local proof:
+- UdonSharp compiles without errors;
+- Play Mode smoke test completed without errors;
+- existing Open behaviour verified: local welcome Canvas and collider both deactivate;
+- `Collider_Entrance`, Open button, Presentation, VideoTXL and unrelated systems were not changed;
+- Unity scene reported saved/clean after implementation.
+
+Evidence boundary:
+- real VRChat multiplayer, late join, host-departure persistence, Group/Public Claim/Start and PlayerData-across-instances are **not yet accepted**;
+- do not call Entrance Text V1 beta-proven until those real-client tests pass.
 
 ## FINAL FEATURE 2 — PERSISTENT SYNCHRONIZED MOVABLE POSTER
 
