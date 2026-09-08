@@ -1,6 +1,6 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-08 Europe/Amsterdam
+Last updated: 2026-09-09 Europe/Amsterdam
 
 ## AUTHORITATIVE CURRENT STATUS
 
@@ -15,10 +15,10 @@ Protected working baseline:
 - fresh offline and OneDrive backups exist after the latest stabilization work.
 
 The only currently planned Classroom feature additions are:
-1. persistent synchronized entrance text;
+1. persistent synchronized entrance text — investigation/plan complete, V1 implementation now approved to start;
 2. one persistent synchronized movable poster with a persistent image URL.
 
-Before those are built, run one narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset.
+The narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset is still open. Do not lose that test obligation while Entrance Text implementation proceeds.
 
 Do not reopen solved architecture questions or broad performance work unless new evidence appears.
 
@@ -258,31 +258,91 @@ If this passes:
 - keep the offline + OneDrive backups;
 - then begin the two final customization features.
 
-## FINAL FEATURE 1 — PERSISTENT ENTRANCE TEXT
+## FINAL FEATURE 1 — PERSISTENT ENTRANCE TEXT — ACTIVE
 
-Desired UX:
-- teacher enters custom entrance text;
-- explicit Apply/Save;
-- text persists for that teacher across sessions;
-- when that teacher establishes a new Classroom instance, their saved text can become the current instance text;
-- everyone present and later joiners see the same current text;
-- include Reset to Default.
+Read-only scene investigation and implementation planning are complete.
 
-Preferred responsibility split:
+Canonical plan:
+
+`ENTRANCE_TEXT_INVESTIGATION_PLAN_2026-09-09.md`
+
+Current investigated entrance truth:
+
+```text
+UIs/Other Toggles and Systems/Canvas (Welcome)
+├── Collider_Entrance
+├── Image
+├── Image
+├── Text (Kop)
+├── Text (Alinea)
+└── Button (Open)
+```
+
+Important preserved behaviour:
+- `Text (Alinea)` is the existing `TextMeshProUGUI` display target;
+- its body text is currently Inspector-hardcoded;
+- no entrance UdonSharp/C# manager exists yet;
+- `Button (Open)` directly calls `Canvas (Welcome).SetActive(false)`;
+- this locally hides both that visitor's welcome display and `Collider_Entrance`;
+- one visitor opening the passage does not affect other visitors;
+- this local dismissal behaviour must remain local and unsynchronized.
+
+Collider finding:
+- `Collider_Entrance` currently works but has a fragile Canvas-relative transform;
+- do not move or refactor it during V1;
+- collider separation is a later independent cleanup only after the text feature is proven.
+
+Agreed state model:
 
 ```text
 PlayerData
-= teacher's personal saved text
+= teacher's personal saved entrance text
+= persists across visits / future instances
 
-small synced instance state
-= current entrance text shown to everyone
+manually synced currentEntranceText
+= current text for this running VRChat instance
+= remains while the instance lives
 ```
 
-Important:
-- wait for persistent data restoration before reading PlayerData;
-- do not save on every keystroke;
-- keep networking authority small and explicit;
-- test real multiplayer + late join.
+Lifecycle:
+- authorized teacher/host initializes a fresh instance from restored PlayerData or default;
+- teacher may edit repeatedly during the same session;
+- typing stays local;
+- Apply / Save persists the teacher value and publishes the current instance value once;
+- late joiners receive the newest synced instance text;
+- if the original host leaves, the current instance text remains unchanged;
+- when the VRChat instance ends, its synced state naturally disappears;
+- a future new instance can be initialized from that teacher's latest PlayerData value.
+
+Authority rules:
+- do not use `isMaster` as teacher identity;
+- use `VipAccessManager` only as teacher/VIP authorization input;
+- prefer `Networking.IsInstanceOwner` for automatic creator/host recognition where supported;
+- keep product authority separate from network-object ownership;
+- Group/Public/Build & Test may require a small explicit teacher-only Claim/Start fallback;
+- do not overbuild takeover logic for V1.
+
+Agreed minimal architecture:
+- `EntranceTextManager.cs` = PlayerData + synced instance text + initialization + validation + late join;
+- `EntranceTextEditorUI.cs` = local TMP input draft + Apply/Save + Reset + status + minimal Claim/Start where needed.
+
+Initial validation target:
+- about 400 characters;
+- about 9 explicit lines;
+- plain text;
+- Reset loads default into the draft and still requires Apply / Save.
+
+Stef has already made a fresh full backup and has authorized Codex to implement V1.
+
+Implementation constraints:
+- token-efficient;
+- no repeat broad investigation;
+- no broad refactor;
+- complete scripts;
+- preserve Canvas/Open/collider behaviour;
+- do not modify Presentation, VideoTXL 2.5.1, VRCDN, projector, e-readers, table screens, Marker Pro or unrelated reset/tablet systems;
+- local/ClientSim checks may be used for wiring only;
+- do not claim real multiplayer / late-join / persistence PASS without real-client proof.
 
 ## FINAL FEATURE 2 — PERSISTENT SYNCHRONIZED MOVABLE POSTER
 
