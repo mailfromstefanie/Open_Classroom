@@ -1,6 +1,6 @@
 # Entrance Text V1 Implementation Snapshot — 2026-09-09
 
-Status: **IMPLEMENTED / LOCALLY CLEAN — REAL VRCHAT ACCEPTANCE OPEN**
+Status: **IMPLEMENTED / LOCALLY CLEAN — SINGLE-USER REAL VRCHAT PERSISTENCE LOOKS POSITIVE; MULTIPLAYER ACCEPTANCE OPEN; TITLE V1.1 PENDING**
 
 This snapshot records the post-implementation state reported by Codex after the approved Persistent Entrance Text V1 build.
 
@@ -86,7 +86,54 @@ This is useful local proof only.
 
 It is **not** equivalent to real VRChat networking or persistence acceptance.
 
-## Required real VRChat acceptance
+## Real VRChat evidence — 2026-09-09
+
+Stef performed a real VRChat build/test after the implementation.
+
+Observed by Stef:
+- the editable entrance body text appeared to persist after leaving and returning;
+- this is positive evidence that the PlayerData persistence path is functioning for her account in a real build.
+
+Evidence boundary:
+- this was not yet a controlled two-user acceptance pass;
+- Stef has not yet verified that another player sees the published text;
+- late-join reconstruction has not yet been proven;
+- host-leave shared-state survival has not yet been proven;
+- Group/Public Claim/Start has not yet been proven.
+
+Therefore record:
+
+```text
+single-user real VRChat body-text persistence
+= POSITIVE OBSERVATION
+
+shared multiplayer visibility
+= NOT YET TESTED
+```
+
+## Pending V1.1 — editable title
+
+After the first real build, Stef identified one missing requirement:
+
+`Canvas (Welcome)/Text (Kop)` must also be editable by the teacher/host.
+
+Required V1.1 direction:
+- preserve the existing `Text (Kop)` TextMeshProUGUI as the visible title;
+- add a local title TMP input to the existing Entrance Text Editor;
+- add personal PlayerData persistence for the title;
+- add synced current-instance title state;
+- initialize title together with body;
+- Apply / Save publishes and persists title + body together;
+- late join should receive both values;
+- host departure must leave both shared values unchanged;
+- Load Default should load default title + default body into the local draft only;
+- user still presses Apply / Save to publish;
+- keep the current authority model, Canvas, Open button and collider unchanged;
+- do not rebuild the entrance feature from scratch.
+
+Use a sensible shorter title limit, approximately 60–80 characters / 1–2 lines unless the actual layout test suggests otherwise.
+
+## Required remaining real VRChat acceptance
 
 Still test with real clients:
 
@@ -103,14 +150,19 @@ Still test with real clients:
 
 ## Acceptance boundary
 
-Until the above real-client tests pass, describe the feature as:
+Current truthful status:
 
 ```text
-Persistent Entrance Text V1
+Persistent Entrance Text V1 body
 = IMPLEMENTED
 = COMPILES
 = LOCAL SMOKE TEST CLEAN
-= REAL MULTIPLAYER/PERSISTENCE ACCEPTANCE OPEN
+= SINGLE-USER REAL VRCHAT PERSISTENCE LOOKS POSITIVE
+= SHARED MULTIPLAYER VISIBILITY NOT YET TESTED
+
+Title editing
+= NOT YET IMPLEMENTED
+= V1.1 PENDING
 ```
 
 Do not claim:
