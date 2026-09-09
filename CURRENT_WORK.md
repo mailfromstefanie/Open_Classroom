@@ -15,7 +15,7 @@ Protected working baseline:
 - fresh offline and OneDrive backups exist after the latest stabilization work.
 
 The only currently planned Classroom feature additions are:
-1. persistent synchronized entrance text — V1 implemented and saved; real VRChat build run indicates personal text persistence appears to work for Stef; shared two-client visibility/late-join/host-leave acceptance still open; title editing (`Text (Kop)`) is a pending V1.1 extension;
+1. persistent synchronized entrance title + body — V1.1 implemented and saved; Unity/UdonSharp compile and scene wiring verified; an earlier real VRChat build indicates personal body persistence appears to work for Stef; title persistence plus shared two-client visibility/late-join/host-leave acceptance remain open;
 2. one persistent synchronized movable poster with a persistent image URL.
 
 The narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset is still open. Do not lose that test obligation while Entrance Text implementation proceeds.
@@ -296,11 +296,11 @@ Agreed state model:
 
 ```text
 PlayerData
-= teacher's personal saved entrance text
+= teacher's personal saved entrance title + body text
 = persists across visits / future instances
 
-manually synced currentEntranceText
-= current text for this running VRChat instance
+manually synced currentEntranceTitle + currentEntranceText
+= current title + body for this running VRChat instance
 = remains while the instance lives
 ```
 
@@ -308,11 +308,11 @@ Lifecycle:
 - authorized teacher/host initializes a fresh instance from restored PlayerData or default;
 - teacher may edit repeatedly during the same session;
 - typing stays local;
-- Apply / Save persists the teacher value and publishes the current instance value once;
-- late joiners receive the newest synced instance text;
-- if the original host leaves, the current instance text remains unchanged;
+- Apply / Save persists the teacher's title + body and publishes both current-instance values once;
+- late joiners receive the newest synced instance title + body;
+- if the original host leaves, the current instance title + body remain unchanged;
 - when the VRChat instance ends, its synced state naturally disappears;
-- a future new instance can be initialized from that teacher's latest PlayerData value.
+- a future new instance can be initialized from that teacher's latest PlayerData values.
 
 Authority rules:
 - do not use `isMaster` as teacher identity;
@@ -323,14 +323,14 @@ Authority rules:
 - do not overbuild takeover logic for V1.
 
 Agreed minimal architecture:
-- `EntranceTextManager.cs` = PlayerData + synced instance text + initialization + validation + late join;
-- `EntranceTextEditorUI.cs` = local TMP input draft + Apply/Save + Reset + status + minimal Claim/Start where needed.
+- `EntranceTextManager.cs` = personal title/body PlayerData + synced current-instance title/body + initialization + validation + late join;
+- `EntranceTextEditorUI.cs` = local title/body TMP drafts + Apply/Save + Reset + status + minimal Claim/Start where needed.
 
-Initial validation target:
-- about 400 characters;
-- about 9 explicit lines;
+Validation:
+- title = 64 characters / one normalized line;
+- body = 400 characters / 9 explicit lines;
 - plain text;
-- Reset loads default into the draft and still requires Apply / Save.
+- Reset loads both defaults into the local drafts and still requires Apply / Save.
 
 V1 is now implemented and saved in the real Unity project.
 
@@ -360,13 +360,24 @@ Evidence update — 2026-09-09 real VRChat build:
 - late join, host-departure shared-state survival, Group/Public Claim/Start and two-client synchronization are still open;
 - do not call Entrance Text V1 fully beta-proven until those specific real-client tests pass.
 
-Pending V1.1 requirement discovered after the build:
-- the entrance title `Text (Kop)` must also become editable/persistent/synchronized;
-- title and body should be edited separately but published/saved together through the same entrance-text system;
-- preserve the existing `Text (Kop)` display object;
-- keep the current body-text implementation and authority model;
-- do not rebuild the feature from scratch;
-- add a small title input and corresponding PlayerData/synced state with a sensible shorter title limit.
+V1.1 title + body extension implemented on 2026-09-09:
+- preserved the existing `Text (Kop)` title display, V1 body implementation and authority model;
+- added a separate single-line title draft input inside the existing editor;
+- kept the reduced editor root at `20 x 11.8` with scale about `0.796` and split the existing top row so the body input retained its height;
+- title validation = maximum 64 characters / one normalized line / plain text / whitespace falls back to default;
+- preserved the original body PlayerData key `open_classroom.entrance_text.v1` for backward compatibility;
+- added title PlayerData key `open_classroom.entrance_title.v1`;
+- added manually synced current-instance title state alongside the existing body state;
+- Apply / Save validates, persists and publishes title + body together;
+- Load Default changes both local drafts and still requires Apply / Save;
+- visible title now auto-sizes between 18 and 25, stays on one line and uses ellipsis if needed;
+- visible body now auto-sizes between 11 and 16, wraps, and uses ellipsis if its fixed area is exceeded;
+- UdonSharp program assets report no assembly errors and the saved scene contains exactly one title input with the intended manager/editor references;
+- no new Play Mode or real VRChat title/multiplayer acceptance run was performed in this V1.1 pass.
+
+Durable V1.1 implementation and acceptance boundary:
+
+`ENTRANCE_TEXT_V1_1_TITLE_PLAN_2026-09-09.md`
 
 ## FINAL FEATURE 2 — PERSISTENT SYNCHRONIZED MOVABLE POSTER
 

@@ -1,6 +1,6 @@
-# Entrance Text V1.1 — Editable Title Plan — 2026-09-09
+# Entrance Text V1.1 — Editable Title — 2026-09-09
 
-Status: **PENDING SMALL EXTENSION**
+Status: **IMPLEMENTED IN REAL UNITY PROJECT / UNITY + UDONSHARP COMPILE VERIFIED / REAL VRCHAT ACCEPTANCE OPEN**
 
 Persistent Entrance Text V1 body text is already implemented.
 
@@ -24,6 +24,40 @@ Extend the existing Entrance Text system so the teacher/host can edit both:
 - Body = `Text (Alinea)`
 
 Both should use the same Apply / Save flow.
+
+## Implemented result
+
+The existing V1 system was extended in place.
+
+Manager changes:
+- preserved body PlayerData key `open_classroom.entrance_text.v1`;
+- added title PlayerData key `open_classroom.entrance_title.v1`;
+- added `entranceTitleDisplay` for the existing `Text (Kop)`;
+- added separately restored personal title state;
+- added manually synchronized `currentEntranceTitle`;
+- title + body initialize, publish, deserialize and update displays together;
+- title + body are saved to personal PlayerData by the authorized publishing player;
+- leaving the instance does not blank or replace the synchronized values;
+- default title is `Stefanie's Open Classroom (Beta)`;
+- title limit is 64 characters and one normalized plain-text line.
+
+Editor changes:
+- added a separate title `TMP_InputField`;
+- dirty-state comparison includes title + body;
+- Apply / Save sends both drafts together;
+- Load Default restores both local drafts without publishing;
+- restored/published drafts refresh together.
+
+Scene changes:
+- reused `Text (Kop)` and `Text (Alinea)`;
+- preserved `Canvas (Welcome)`, Open button and `Collider_Entrance`;
+- kept the reduced editor root at `20 x 11.8`, scale about `0.796`;
+- split the existing top label row horizontally for a short title input;
+- retained the body input's existing height and the button/status positions;
+- title input is single-line, 64 characters, plain text;
+- title display auto-sizes from 25 down to 18, does not wrap and uses ellipsis;
+- body display auto-sizes from 16 down to 11, wraps and uses ellipsis if needed;
+- existing input viewports continue to use `RectMask2D` clipping.
 
 ## Persistence and synchronization
 
@@ -62,16 +96,26 @@ Do not change:
 
 Do not rebuild the feature from scratch.
 
-## Suggested title validation
+## Title validation
 
-Initial target:
-
-- approximately 60–80 characters;
-- maximum 1–2 lines;
+- maximum 64 characters;
+- one line; newline characters are normalized to spaces;
 - plain text;
-- reject over-limit input clearly.
+- blank input resolves to the default title.
 
 Actual layout remains authoritative.
+
+## Local verification performed
+
+- Unity imported and UdonSharp compiled both modified behaviours.
+- Generated `EntranceTextManager.asset` and `EntranceTextEditorUI.asset` report no assembly error.
+- The already-open Unity Editor completed the bounded scene upgrade and saved `Classroom.unity`.
+- The saved scene contains exactly one title input.
+- Manager and editor title references are serialized in both UdonSharp proxies and backing Udon behaviours.
+- The temporary editor upgrade helper was removed.
+- VideoTXL, Presentation, e-reader, local table screens, the entrance collider and Open button were not changed.
+
+No new Play Mode or real VRChat run was performed for the V1.1 title extension.
 
 ## Acceptance still open
 
@@ -93,6 +137,11 @@ Body persistence in real build
 Multiplayer shared visibility
 = not yet tested
 
-Editable title
-= pending V1.1
+Editable title + body
+= implemented
+= Unity/UdonSharp compile verified
+= saved scene wiring verified
+
+Title PlayerData in real VRChat
+= not yet tested
 ```
