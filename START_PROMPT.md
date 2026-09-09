@@ -22,17 +22,28 @@ Real Unity project:
 
 ## Read first
 
+### Mandatory Open Classroom truth
 1. `AGENTS.md`
 2. `CURRENT_WORK.md`
 3. `WORKLOG_2026-09-08.md`
-4. `EREADER_LIBRARY_HANDOFF_2026-09-05.md` when e-reader internals matter
-5. `PRESENTATION_ACCEPTANCE_2026-09-05.md` when Presentation internals matter
-6. `PERFORMANCE_AUDIT_2026-09-05.md` only before deliberate performance work
-7. exact feature/architecture files only when needed
-8. Presentation Service `CURRENT_WORK.md` for hosted-service truth
-9. Cinema `CURRENT_WORK.md` only when deliberately moving back to Cinema
+4. `ENTRANCE_TEXT_IMPLEMENTATION_2026-09-09.md`
+5. `ENTRANCE_TEXT_V1_1_TITLE_PLAN_2026-09-09.md`
 
-## Exact current truth — 2026-09-08
+### Mandatory cross-project context
+6. `mailfromstefanie/StefanieInVR-Presentation-Service/CURRENT_WORK.md`
+   - understand the live hosted Presentation Service, product direction, beta state, and how Open Classroom fits into the broader StefanieInVR product line;
+7. `mailfromstefanie/Stefanies-Art-House-Cinema/CURRENT_WORK.md`
+   - understand the parked Cinema project, its existing control/menu/reset/admin route, and what work is intended after Open Classroom;
+
+These two cross-project reads are context only. Do not edit or implement in those repositories unless Stef explicitly asks.
+
+### Read when relevant
+8. `EREADER_LIBRARY_HANDOFF_2026-09-05.md` when e-reader internals matter
+9. `PRESENTATION_ACCEPTANCE_2026-09-05.md` when Presentation internals matter
+10. `PERFORMANCE_AUDIT_2026-09-05.md` only before deliberate performance work
+11. exact feature/architecture files only when needed
+
+## Exact current truth — 2026-09-09
 
 **Open Classroom is functionally very close to complete.**
 
@@ -46,6 +57,40 @@ Protected working baseline:
 - e-reader last-read page now uses VRChat PlayerData per user;
 - five Marker Pro objects have dedicated global reset points;
 - Stef has fresh offline and OneDrive backups.
+
+
+
+## Cross-project identity / roadmap context
+
+Do not treat Open Classroom as an isolated one-off world.
+
+The broader StefanieInVR direction is:
+
+```text
+Presentation Service
+= live hosted PDF -> MP4 service / beta product
+
+Open Classroom
+= current active VRChat implementation / beta classroom / proving ground
+
+Reusable Presentation + e-reader patterns
+= future productization candidates
+
+Art House Cinema
+= later integration target using its own existing control/menu/reset/admin architecture
+```
+
+Understand this roadmap before proposing architecture.
+
+Important:
+- Open Classroom is the active implementation truth for this session;
+- Presentation Service defines hosted-service/product truth;
+- Cinema is later, not currently active, but its return route must be respected;
+- do not create Open Classroom systems in a way that obviously conflicts with later reuse/productization unless there is a good reason;
+- do not prematurely implement Cinema work from Open Classroom;
+- preserve working systems and prefer small reusable patterns where practical.
+
+Stef is building toward reusable VRChat teaching/presentation tools and eventually commercializable prefabs/services. Keep recommendations practical, lightweight, beginner-maintainable, and reuse-friendly.
 
 ## Important latest evidence
 
