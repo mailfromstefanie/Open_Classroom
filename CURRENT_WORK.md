@@ -1,6 +1,6 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-09 Europe/Amsterdam
+Last updated: 2026-09-10 Europe/Amsterdam
 
 ## AUTHORITATIVE CURRENT STATUS
 
@@ -14,9 +14,9 @@ Protected working baseline:
 - five Marker Pro objects = dedicated shared reset points added;
 - fresh offline and OneDrive backups exist after the latest stabilization work.
 
-The only currently planned Classroom feature additions are:
+The final two planned Classroom feature additions are now present in the real Unity project:
 1. persistent synchronized entrance title + body — V1.1 implemented and saved; Unity/UdonSharp compile and scene wiring verified; an earlier real VRChat build indicates personal body persistence appears to work for Stef; title persistence plus shared two-client visibility/late-join/host-leave acceptance remain open;
-2. one persistent synchronized movable poster with a persistent image URL.
+2. one persistent synchronized movable poster — implemented and editor-smoke-tested on 2026-09-10; the self-contained `Panel (Poster)` is deliberately staged inactive for the planned separate tablet tab; real VRChat URL, movement, multiplayer and late-join acceptance remain open.
 
 The narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset is still open. Do not lose that test obligation while Entrance Text implementation proceeds.
 
@@ -241,22 +241,23 @@ Do **not** begin with performance optimization.
 
 Do **not** rebuild Presentation, VideoTXL, the e-reader or table screens.
 
-First action:
+First UI action:
 
 ```text
-RUN ONE NARROW REAL MULTIPLAYER ACCEPTANCE PASS
+ADD ONE SEPARATE TABLET TAB FOR WELCOME + POSTER EDITING
 ```
 
-Check:
-1. e-reader PlayerData last-page persistence;
-2. both physical e-readers share the same user's stored progress;
-3. Marker Pro global reset is seen correctly by both users;
-4. optional late join if useful.
+Use the already staged inactive `Panel (Poster)` and the existing Entrance Text V1.1 editor. Do not squeeze either editor back into the reduced VIP layout. Inspect the current tablet tab manager arrays and lock-panel visibility rules before wiring the new tab. Keep the UI move/layout change separate from runtime architecture.
 
-If this passes:
-- record the result as the golden Classroom baseline;
-- keep the offline + OneDrive backups;
-- then begin the two final customization features.
+Then run one narrow real VRChat multiplayer acceptance pass covering:
+1. entrance title/body synchronization and late join;
+2. poster direct URL/image synchronization, movement, scale and late join;
+3. unlocked non-VIP editing versus locked VIP-only editing;
+4. host/publisher departure while the instance remains alive;
+5. e-reader PlayerData last-page persistence and both books sharing it;
+6. Marker Pro global reset visibility to both users.
+
+If this passes, record the result as the golden Classroom baseline and keep the offline + OneDrive backups.
 
 ## FINAL FEATURE 1 — PERSISTENT ENTRANCE TEXT — ACTIVE
 
@@ -381,37 +382,77 @@ Durable V1.1 implementation and acceptance boundary:
 
 ## FINAL FEATURE 2 — PERSISTENT SYNCHRONIZED MOVABLE POSTER
 
-Desired UX:
-- one poster object;
-- teacher pastes a direct image URL (own server or supported host);
-- poster displays that image;
-- pickup interaction should feel like the current e-reader;
-- can be placed anywhere;
-- one simple slider changes uniform scale;
-- position/rotation/scale are synchronized to the instance;
-- late joiners see the current poster;
-- teacher's configuration persists for future sessions.
+Implemented in the real Unity project on 2026-09-10.
 
-Preferred persistent fields:
-- image URL;
-- position;
-- rotation;
-- uniform scale.
-
-Preferred separation:
+Current architecture:
 
 ```text
 PlayerData
-= teacher's saved poster configuration
+= local user's saved URL text history + position + rotation + uniform scale
 
-synced runtime state / ownership
-= poster currently active in this instance
+manually synced VRCUrl + uniform scale
++ VRCObjectSync transform
+= current poster truth for this running instance
 ```
 
-Reuse only as references:
-- e-reader = pickup feel + PlayerData pattern;
-- local table screens = UI visual language + scale concept only;
-- Marker/reset infrastructure = reset/ownership reference where appropriate.
+Created runtime components:
+- `PersistentPoster.cs` = VRChat image download, aspect-ratio fit, pickup authorization and placement handoff;
+- `PersistentPosterManager.cs` = PlayerData, synchronized instance URL/scale, initialization, reset and lock enforcement;
+- `PersistentPosterEditorUI.cs` = direct URL input, Load/Apply, reset draft, scale preview and release-only publish;
+- `Persistent Poster` scene object = kinematic Rigidbody + VRCPickup + VRCObjectSync + frame/image/placeholder;
+- `Persistent Poster Manager` scene object;
+- inactive `Panel (Poster)` under the existing tablet `Panels` container, ready to be attached to the planned separate welcome/poster tab without squeezing the current VIP layout.
+
+Authority:
+- tablet unlocked: everyone may load, resize and move the poster;
+- tablet locked: only a locally verified VIP may change or move it;
+- temporary object ownership is used only for synchronization and never grants product permission by itself.
+
+Scale behaviour:
+- range `0.4x` to `2.0x`;
+- dragging previews locally;
+- only PointerUp/release requests synchronization;
+- minimum one-second publish interval;
+- if several releases happen during the interval, the latest value wins.
+
+Reset behaviour:
+- Reset only loads the empty/default URL, `1.0x` scale and default placement as a local draft;
+- Load/Apply is deliberately required before personal/shared state changes.
+
+Image loading:
+- uses `VRCImageDownloader` and a real `VRCUrlInputField`;
+- each client downloads the synchronized direct image URL locally;
+- the previous successful image remains if a replacement URL fails;
+- empty URL shows the placeholder;
+- the visible surface and pickup frame preserve the downloaded source aspect ratio.
+
+Known VRChat platform boundary:
+- PlayerData can store the URL as a normal string, but Udon cannot construct a new `VRCUrl` from that restored string and cannot write arbitrary text into `VRCUrlInputField`;
+- therefore a direct URL synchronizes correctly inside the running instance and reaches late joiners through the synced `VRCUrl`, but the host must paste it once again when establishing a future new instance;
+- position, rotation and uniform scale do restore normally from PlayerData;
+- do not describe the future-session URL as automatically restorable unless VRChat exposes a supported string-to-`VRCUrl` path later.
+
+Editor validation completed:
+- Unity C# compile: PASS;
+- all three UdonSharp program assets: Current Version / no assembly errors;
+- scene references, VRCUrlInputField, buttons, PointerUp event, VRCPickup, VRCObjectSync and PlayerData fields: wired;
+- Play Mode smoke: PlayerData restore reached, instance initialized, poster pickup enabled while unlocked, empty URL placeholder active;
+- scale smoke: `1.2x` drag changed local preview while synchronized value stayed `1.0x`; release published `1.2x`;
+- cooldown smoke: releases at `1.3x` then `1.4x` kept `1.2x` during the interval and published the latest `1.4x` afterward;
+- reset smoke: Reset previewed `1.0x` without changing synchronized `1.4x`; Apply then published `1.0x` and restored the default pose;
+- scene saved clean after leaving Play Mode.
+
+Not yet proven:
+- real VRChat remote image download, including domain permissions and invalid URL feedback;
+- two-client movement/rotation/scale/image agreement;
+- late join;
+- owner/host departure while the instance remains alive;
+- unlocked non-VIP editing and locked VIP-only editing with real accounts/controllers;
+- Quest behaviour.
+
+Durable implementation detail and acceptance checklist:
+
+`PERSISTENT_POSTER_IMPLEMENTATION_2026-09-10.md`
 
 Hard boundary:
 - do NOT convert or rewrite the working local table screens;
