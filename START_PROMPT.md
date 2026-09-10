@@ -42,7 +42,7 @@ Therefore:
 
 **DO NOT CONTINUE BUILDING ON IT.**
 
-Stef has decided to restore the full Unity backup she made at the **beginning of the evening**.
+Stef has selected the rollback backup that already contains the working **persistent welcome/body text**, but is still from **before** the editable-title extension, Persistent Poster and `Panel (Content)` / index-8 work.
 
 That restored backup must become the candidate baseline.
 
@@ -53,7 +53,7 @@ Earlier GitHub notes saying the Content-tab/editor smoke test passed do not over
 ### RECOVERY ONLY
 
 1. Read the files above.
-2. Help Stef restore the full beginning-of-evening backup over the current working Unity project.
+2. If Stef has not already done so, help her restore the selected backup (persistent welcome/body text present; no editable title/poster/Content tab) over the current working Unity project.
 3. Do not copy, merge or salvage scene objects from the currently broken project into the backup.
 4. Open the restored project.
 5. Let Unity finish importing/compiling.
@@ -141,3 +141,19 @@ If Stef later asks to bring one back:
 - no autonomous visual redesign;
 - do not claim VRChat/Quest/multiplayer proof without real testing;
 - GitHub is durable project memory, but the **restored and Stef-approved Unity scene is authoritative scene truth**.
+
+
+## Agreed next build order after recovery acceptance
+
+After Stef explicitly approves the restored scene:
+
+1. Manually separate `Collider_Entrance` from the welcome Canvas while preserving the current local Open/dismiss behaviour.
+2. Stef manually creates the new tablet tab and its visual UI first.
+3. Reconnect the existing welcome-text logic one reference/button at a time.
+4. Add editable welcome title only after the new UI is visually approved.
+5. Reconsider the poster from first principles: physical pickup/move/place, with image URL and uniform scale controlled only from the tablet so tablet lock/VIP rules protect those settings.
+6. Inspect the globe only as a movement/pickup reference if useful.
+7. Investigate a VRChat-supported persistent URL route, including persistent PlayerObject where appropriate, before coding.
+8. Do not automatically recreate the rejected poster scene integration.
+
+The next session starts with recovery verification, not implementation.
