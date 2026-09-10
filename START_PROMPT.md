@@ -1,6 +1,18 @@
 # Start Prompt — Open Classroom
 
-Use this file to start the **next** ChatGPT/Codex session.
+## Entry point role
+
+This is the **direct Open Classroom / Codex specialist prompt**.
+
+For Stef's normal Nova/ChatGPT entrypoint across Cinema, Open Classroom and Presentation Service, use:
+
+`mailfromstefanie/StefanieInVR-Project-Hub/STARTPROMPT.txt`
+
+The Hub routes cross-project work. It never overrides this repository or the real Stef-approved Unity scene.
+
+See also: `PROJECT_HUB.md`.
+
+---
 
 ## Primary project
 
@@ -25,135 +37,121 @@ Do not edit those other repositories unless Stef explicitly asks.
 3. `RECOVERY_DECISION_2026-09-10.md`
 4. `WORKLOG_2026-09-08.md`
 
-Only read the Entrance Text / Poster implementation documents after recovery if their technical design becomes relevant again. They describe attempted work and useful architecture, but they are **not an accepted current scene baseline**.
+Only read Entrance Text / Poster implementation documents after recovery if their technical design becomes relevant again. They describe attempted work and useful architecture, but they are **not an accepted current scene baseline**.
 
 ## Critical current truth — 2026-09-10
 
-Tonight's later Unity work did **not** produce an acceptable scene.
+The later title/poster/Content-tab Unity scene is **rejected as a usable baseline**.
 
 Stef inspected the real project and reported:
 - the Canvas/tablet layout is badly disturbed;
-- multiple / all relevant buttons no longer work correctly;
-- the problem is partly visual and cannot be sensibly repaired by continuing automated scene editing.
+- multiple/all relevant buttons no longer work correctly;
+- the problem is partly visual and should not be repaired by more autonomous scene editing.
 
 Therefore:
 
-**DO NOT REPAIR THE CURRENT SCENE.**
+**DO NOT REPAIR THE CURRENT BROKEN SCENE.**
 
 **DO NOT CONTINUE BUILDING ON IT.**
 
-Stef has selected the rollback backup that already contains the working **persistent welcome/body text**, but is still from **before** the editable-title extension, Persistent Poster and `Panel (Content)` / index-8 work.
+Stef selected the rollback backup that already contains the working **persistent welcome/body text**, but predates:
+- editable entrance title;
+- Persistent Poster runtime/scene integration;
+- `Panel (Content)` / index-8 integration.
 
-That restored backup must become the candidate baseline.
+The restored backup is only a **candidate baseline** until Stef herself visually and functionally approves it.
 
-Earlier GitHub notes saying the Content-tab/editor smoke test passed do not override Stef's later real visual/functional rejection.
+Earlier compile/editor/Play Mode notes never override Stef's later real visual/functional rejection.
 
-## Exact task for the next Codex session
+## Exact next task — recovery only
 
-### RECOVERY ONLY
-
-1. Read the files above.
-2. If Stef has not already done so, help her restore the selected backup (persistent welcome/body text present; no editable title/poster/Content tab) over the current working Unity project.
-3. Do not copy, merge or salvage scene objects from the currently broken project into the backup.
-4. Open the restored project.
-5. Let Unity finish importing/compiling.
-6. Check only:
-   - old tablet/canvas layout looks restored;
+1. Restore the selected backup if Stef has not already done so.
+2. Do not copy/merge scene objects from the broken project into the backup.
+3. Open the restored project and allow Unity to finish importing/compiling.
+4. Verify only:
+   - old tablet/canvas layout is restored;
    - pre-existing buttons work again;
-   - Presentation is still present;
-   - exact VideoTXL 2.5.1 is still present;
-   - e-reader/library is still present;
-   - reset systems are still present.
-7. Do not add Entrance Text title changes, Poster integration, Content tab or any other new feature.
-8. Do not redesign anything.
-9. Report exactly what the restored backup contains.
-10. **STOP and wait for Stef.**
+   - Presentation remains present;
+   - exact VideoTXL 2.5.1 remains present;
+   - e-reader/library remains present;
+   - reset systems remain present.
+5. Add no new feature.
+6. Redesign nothing.
+7. Report exactly what the restored backup contains.
+8. **STOP for Stef's visual approval.**
 
-The backup is not officially accepted until Stef herself visually checks the scene and says it is good.
+## What is rolled back
 
-## What is being rolled back
-
-Treat all Unity scene/UI/runtime changes made after the selected beginning-of-evening backup as discarded.
-
-This includes, where absent from that backup:
-- tonight's Entrance Text V1.1 title/body UI work;
+Treat later scene/UI/runtime changes after the selected backup as discarded baseline work, including where absent from the backup:
+- Entrance Text V1.1 editable-title/UI additions;
 - Persistent Poster scene/runtime integration;
-- `eDit` / `Panel (Content)` tab at index 8;
+- `eDit` / `Panel (Content)` index-8 tab;
 - moving Entrance Text into that Content panel;
-- poster editor layout in that panel;
-- related tab/button wiring and later scene changes.
+- poster editor layout/wiring;
+- related later scene changes.
 
-Do not delete their GitHub documentation. It remains reference/history only.
+Do not delete their GitHub documentation. It remains research/history/reference only.
 
-## After recovery — working method changes
+## Protected proven systems
 
-Once Stef explicitly accepts the restored backup:
-
-- Stef will build most visual Canvas/UI layout manually.
-- Nova/ChatGPT will guide her step by step.
-- Codex is used only when a small technical action is genuinely useful.
-- One small change at a time.
-- Test immediately after each change.
-- Never batch several visual/UI changes into one autonomous pass.
-- Never treat compile/Play Mode success as proof that the UI looks or feels correct.
-- Stef's visual inspection is required for UI acceptance.
-
-## Protected systems
-
-Unless Stef explicitly requests a change, protect:
-- Presentation system;
+Unless Stef explicitly requests otherwise, protect:
+- proven Presentation Core + integration;
 - exact VideoTXL 2.5.1;
 - physical projector/screen path;
 - e-reader/library architecture;
-- PlayerData reading progress;
+- PlayerData reading progress pattern;
 - Marker Pro reset;
-- existing tablet/navigation that is working in the restored backup;
+- working restored tablet/navigation;
 - local table screens;
 - unrelated scene objects.
 
-## Existing technical knowledge that may be reused later
+Presentation acceptance remains valid despite the later UI rollback, including:
+- real two-client sync;
+- cross-client slide control;
+- OFF/ON resume;
+- late join;
+- VideoTXL local suspend/restore.
 
-GitHub contains documentation for:
-- persistent Entrance Text architecture;
-- Entrance Text V1.1 title/body concept;
-- Persistent Poster architecture;
-- PlayerData + synced-instance-state patterns.
+A separate formal Quest-headset PASS is not documented.
 
-These are **reference designs only after rollback**.
+## After recovery acceptance
 
-Do not automatically recreate them.
+Only after Stef explicitly approves the restored scene:
 
-If Stef later asks to bring one back:
-1. inspect the restored baseline first;
-2. agree on one tiny step;
-3. implement only that step;
-4. Stef visually tests;
-5. continue only after approval.
+1. manually separate `Collider_Entrance` from the welcome Canvas while preserving local Open/dismiss behaviour;
+2. Stef manually creates the new tablet tab and visual UI;
+3. reconnect existing welcome-text logic one tiny reference/button step at a time;
+4. add editable welcome title only after the new UI is visually approved;
+5. reconsider the poster from first principles;
+6. keep poster URL + uniform scale controls on the tablet so tablet lock/VIP rules protect those settings;
+7. inspect simple physical movement references such as the globe only where useful;
+8. investigate a VRChat-supported persistent URL route, including persistent PlayerObject where technically appropriate;
+9. do not automatically recreate the rejected `PersistentPoster*` implementation.
+
+## Working method after recovery
+
+- Stef builds most visual Canvas/UI layout manually.
+- Nova/ChatGPT guides one microstep at a time.
+- Codex is used only for small, bounded technical tasks.
+- Never batch multiple visual/UI changes.
+- Test immediately after every small change.
+- Compile/Play Mode success is not proof of visual acceptance.
+- Stef's visual check is required for UI acceptance.
 
 ## Working style
 
-- speak Dutch to Stef;
+- Dutch to Stef;
 - beginner-friendly;
-- explain what and why before technical detail;
-- one action at a time;
+- explain what and why before technique;
+- one manual Unity action at a time;
 - exact GameObject/component/Inspector field when known;
 - no broad refactors;
 - no autonomous visual redesign;
-- do not claim VRChat/Quest/multiplayer proof without real testing;
+- do not claim VRChat/Quest/multiplayer proof without real evidence;
 - GitHub is durable project memory, but the **restored and Stef-approved Unity scene is authoritative scene truth**.
 
+## Session close
 
-## Agreed next build order after recovery acceptance
-
-After Stef explicitly approves the restored scene:
-
-1. Manually separate `Collider_Entrance` from the welcome Canvas while preserving the current local Open/dismiss behaviour.
-2. Stef manually creates the new tablet tab and its visual UI first.
-3. Reconnect the existing welcome-text logic one reference/button at a time.
-4. Add editable welcome title only after the new UI is visually approved.
-5. Reconsider the poster from first principles: physical pickup/move/place, with image URL and uniform scale controlled only from the tablet so tablet lock/VIP rules protect those settings.
-6. Inspect the globe only as a movement/pickup reference if useful.
-7. Investigate a VRChat-supported persistent URL route, including persistent PlayerObject where appropriate, before coding.
-8. Do not automatically recreate the rejected poster scene integration.
-
-The next session starts with recovery verification, not implementation.
+Update Open Classroom truth only for what actually changed/tested.
+Update `mailfromstefanie/StefanieInVR-Project-Hub/CURRENT_ECOSYSTEM.md` only when the recovery/milestone changes the cross-project picture.
+Do not rewrite the Hub master startprompt after ordinary Classroom work.
