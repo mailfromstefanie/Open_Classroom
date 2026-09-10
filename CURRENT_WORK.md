@@ -24,6 +24,29 @@ Read:
 
 All later sections that describe Entrance Text V1.1, Persistent Poster or `Panel (Content)` as implemented are now **historical/attempted implementation notes**, not accepted current baseline, until explicitly rebuilt and re-tested after recovery.
 
+## SELECTED ROLLBACK BASELINE — 2026-09-10
+
+Stef selected a specific backup for recovery.
+
+Expected contents after restore:
+- working persistent editable **entrance body/welcome text**;
+- no editable entrance title yet;
+- no Persistent Poster runtime/scene integration;
+- no `Panel (Content)` / index-8 tab integration;
+- earlier tablet/canvas layout and button wiring intact.
+
+This is the intended candidate baseline. Do not call it accepted until Stef restores it and visually verifies the real Unity scene.
+
+After acceptance, the agreed order is:
+1. manually separate `Collider_Entrance` from the welcome Canvas without changing local visitor dismissal semantics;
+2. Stef manually creates the new tablet tab and visual UI;
+3. reconnect existing welcome-text logic in microsteps;
+4. then add editable title;
+5. then redesign the poster more simply, with URL + uniform scale controlled through the tablet and physical move/place kept simple;
+6. investigate supported persistent URL storage, including persistent PlayerObject where appropriate, before implementation.
+
+The rejected 2026-09-10 poster/title/Content-tab implementation remains documentation/history only and must not be treated as current scene truth.
+
 ## AUTHORITATIVE PRE-RECOVERY BASELINE
 
 **Open Classroom is now functionally very close to complete.**
