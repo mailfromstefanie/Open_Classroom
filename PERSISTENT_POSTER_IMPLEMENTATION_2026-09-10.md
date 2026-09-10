@@ -55,6 +55,8 @@ Scene changes in `Assets/#Classroom/Scenes/Classroom.unity`:
 
 The Content tab is now fully connected. Play Mode confirmed that pressing `Tab (Edit)` selects index `8`, activates only `Panel (Content)`, makes both editors visible and changes the Edit sprite to `EditTabOn` / `EditTabOnHigh`.
 
+Follow-up UI correction: the cloned VideoTXL URL field retained pixel-sized mask offsets that collapsed inside the smaller Content layout. Its mask/text RectTransforms were refitted to the `19 x 2` field. Play Mode now confirms that the URL input is visible-sized, active, interactable and can receive focus; both poster buttons are interactable when unlocked.
+
 ## Image behaviour
 
 - User input must come through `VRCUrlInputField`.
