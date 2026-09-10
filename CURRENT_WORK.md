@@ -16,7 +16,7 @@ Protected working baseline:
 
 The final two planned Classroom feature additions are now present in the real Unity project:
 1. persistent synchronized entrance title + body — V1.1 implemented and saved; Unity/UdonSharp compile and scene wiring verified; an earlier real VRChat build indicates personal body persistence appears to work for Stef; title persistence plus shared two-client visibility/late-join/host-leave acceptance remain open;
-2. one persistent synchronized movable poster — implemented and editor-smoke-tested on 2026-09-10; the self-contained `Panel (Poster)` is deliberately staged inactive for the planned separate tablet tab; real VRChat URL, movement, multiplayer and late-join acceptance remain open.
+2. one persistent synchronized movable poster — implemented and editor-smoke-tested on 2026-09-10; the new `eDit` / `Panel (Content)` tab contains both Entrance Text and poster editing; real VRChat URL, movement, multiplayer and late-join acceptance remain open.
 
 The narrow real multiplayer acceptance pass for the new e-reader PlayerData behaviour and Marker Pro reset is still open. Do not lose that test obligation while Entrance Text implementation proceeds.
 
@@ -241,15 +241,7 @@ Do **not** begin with performance optimization.
 
 Do **not** rebuild Presentation, VideoTXL, the e-reader or table screens.
 
-First UI action:
-
-```text
-ADD ONE SEPARATE TABLET TAB FOR WELCOME + POSTER EDITING
-```
-
-Use the already staged inactive `Panel (Poster)` and the existing Entrance Text V1.1 editor. Do not squeeze either editor back into the reduced VIP layout. Inspect the current tablet tab manager arrays and lock-panel visibility rules before wiring the new tab. Keep the UI move/layout change separate from runtime architecture.
-
-Then run one narrow real VRChat multiplayer acceptance pass covering:
+Run one narrow real VRChat multiplayer acceptance pass covering:
 1. entrance title/body synchronization and late join;
 2. poster direct URL/image synchronization, movement, scale and late join;
 3. unlocked non-VIP editing versus locked VIP-only editing;
@@ -401,7 +393,8 @@ Created runtime components:
 - `PersistentPosterEditorUI.cs` = direct URL input, Load/Apply, reset draft, scale preview and release-only publish;
 - `Persistent Poster` scene object = kinematic Rigidbody + VRCPickup + VRCObjectSync + frame/image/placeholder;
 - `Persistent Poster Manager` scene object;
-- inactive `Panel (Poster)` under the existing tablet `Panels` container, ready to be attached to the planned separate welcome/poster tab without squeezing the current VIP layout.
+- `Panel (Content)` at tab index `8`, containing the existing Entrance Text editor above the poster editor without squeezing the VIP layout;
+- user-created `Tab (Edit)` button wired to index `8` with the four supplied Edit sprites.
 
 Authority:
 - tablet unlocked: everyone may load, resize and move the poster;

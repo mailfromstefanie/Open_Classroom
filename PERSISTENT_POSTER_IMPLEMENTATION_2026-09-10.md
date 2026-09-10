@@ -49,9 +49,11 @@ Scene changes in `Assets/#Classroom/Scenes/Classroom.unity`:
 - `UIs/Other Toggles and Systems/Persistent Poster Home`;
 - `UIs/Other Toggles and Systems/Persistent Poster`;
 - `UIs/Managers/Persistent Poster Manager`;
-- inactive `.../===Panels and Tabs===/Panels/Panel (Poster)`.
+- `.../===Panels and Tabs===/Panels/Panel (Content)` at tab index `8`;
+- `Tab (Edit)` wired to index `8` with the supplied Edit On/Off/Highlight sprites;
+- the existing Entrance Text editor moved into the upper portion of `Panel (Content)`.
 
-The panel is intentionally self-contained and inactive. No existing tab array or tab button was changed. It is ready for the planned separate tablet tab for welcome/poster editing.
+The Content tab is now fully connected. Play Mode confirmed that pressing `Tab (Edit)` selects index `8`, activates only `Panel (Content)`, makes both editors visible and changes the Edit sprite to `EditTabOn` / `EditTabOnHigh`.
 
 ## Image behaviour
 
