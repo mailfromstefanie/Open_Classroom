@@ -2,7 +2,29 @@
 
 Last updated: 2026-09-10 Europe/Amsterdam
 
-## AUTHORITATIVE CURRENT STATUS
+## CRITICAL RECOVERY OVERRIDE — READ FIRST
+
+**The current end-of-evening Unity scene is REJECTED as a working baseline.**
+
+After the latest Content-tab / Entrance Text / Poster work, Stef inspected the real Unity project and reported:
+- the tablet/canvas layout is badly disturbed;
+- multiple / all relevant buttons no longer work correctly;
+- the issue is partly visual/layout-specific and should not be repaired by more autonomous scene editing.
+
+Decision:
+- do **not** fix forward from the current scene;
+- restore Stef's full backup from the **beginning of the evening**;
+- do not merge objects from the broken scene into that backup;
+- verify the restored tablet/layout/buttons first;
+- the restored state becomes authoritative only after Stef visually approves it;
+- then rebuild future UI changes manually and incrementally, with Codex limited to very small scoped technical tasks.
+
+Read:
+`RECOVERY_DECISION_2026-09-10.md`
+
+All later sections that describe Entrance Text V1.1, Persistent Poster or `Panel (Content)` as implemented are now **historical/attempted implementation notes**, not accepted current baseline, until explicitly rebuilt and re-tested after recovery.
+
+## AUTHORITATIVE PRE-RECOVERY BASELINE
 
 **Open Classroom is now functionally very close to complete.**
 
