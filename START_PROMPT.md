@@ -38,28 +38,23 @@ Do not edit those other repositories unless Stef explicitly asks.
 4. `RECOVERY_DECISION_2026-09-10.md`
 5. `WORKLOG_2026-09-08.md`
 
-`HANDOFF_2026-09-11_POSTER_REPAIR.md` contains the newest session decision and temporarily overrides the older rollback-only instruction where they conflict.
+`HANDOFF_2026-09-11_POSTER_REPAIR.md` contains the newest session truth and overrides older poster/rollback instructions where they conflict.
 
-The 2026-09-10 recovery decision remains useful history and the older backup remains a safe fallback. It is **not the current immediate action** because Stef has deliberately chosen to cautiously repair the current scene first.
+The 2026-09-10 rollback backup remains a protected fallback. Do not discard it. The current immediate direction is a narrow poster rebuild, not an automatic rollback and not continued repair of the rejected generated poster.
 
 ## Critical current truth — 2026-09-11
 
-Stef is keeping the current scene for now and attempting a narrow repair rather than immediately restoring the older backup.
-
 Current user-observed state:
 - Entrance/welcome text is functionally working well enough;
-- Entrance editor UI looks inconsistent with the established tablet style, but that is parked;
+- Entrance editor UI looks inconsistent with the established tablet style, but styling is parked;
 - Presentation/PowerPoint UI styling is not a current priority;
-- the poster is the active technical problem;
-- poster URL input can receive focus/type input in VRChat, but readability is poor;
-- image loading has not yet passed a real VRChat test;
-- the generated poster physical hierarchy does not match Stef's intended existing-plane design.
+- the current generated Persistent Poster has **failed functional acceptance**;
+- in a real VRChat test the poster URL field can accept visible text after a narrow input correction;
+- Load/Apply and the other current poster controls were not operable;
+- no poster image appeared;
+- the generated Cube/Quad physical poster does not match Stef's intended existing-plane design.
 
-A read-only investigation found several UI/style inconsistencies and an accidental shared Claim-button reference.
-Stef manually cleared `PersistentPosterEditorUI.claimButton` to `None`.
-Do not rebuild broad UI or infer that this fixed the poster itself.
-
-A previous real VRChat log showed a concrete poster failure:
+A previous real VRChat log showed:
 
 ```text
 https://imgur.com/oaEbiM2.png
@@ -67,57 +62,65 @@ https://imgur.com/oaEbiM2.png
 -> Redirect limit exceeded
 ```
 
-The next test must use a direct final image URL such as:
+Use a direct final test URL such as:
 
 `https://i.imgur.com/oaEbiM2.png`
 
-This is only a test URL. Do not add Imgur-specific logic; the poster must remain generic for valid direct HTTPS image URLs supported by VRChat.
+This is only a test URL. Do not add Imgur-specific logic; the final poster must remain generic for valid direct HTTPS image URLs supported by VRChat.
 
-## Interrupted Codex boundary
+Technical findings from the failed implementation:
+- there is one active poster `VRCUrlInputField`, not duplicate fields over each other;
+- `onEndEdit` and `onValueChanged` are empty, so confirming the URL field alone does not start the image downloader;
+- Load/Apply depends on `posterInitialized && playerDataReady && IsLocalChangeAllowedByLock()`;
+- the current visible poster surface is a generated temporary Quad, not Stef's intended existing plane;
+- Stef manually cleared the erroneous `PersistentPosterEditorUI.claimButton` reference back to `None`.
 
-Codex reported it was making only two narrow scene edits:
-- use the direct `i.imgur.com` test URL;
-- make the existing poster URL input readable enough to test.
+Do not spend the next session untangling all old authorization/UI coupling before proving the basic image chain independently.
 
-Codex then ran out of credits while updating GitHub documentation.
+## Exact next task — NARROW POSTER REBUILD
 
-Therefore first inspect the real Unity scene and verify whether those local edits actually completed. Do not blindly reapply them.
+Do **not** continue repairing the current generated Persistent Poster implementation as the preferred route.
+Do **not** begin with persistence, synchronization, movement, scale, authorization, or full UI styling.
+Do **not** modify Entrance Text logic, Presentation, VideoTXL, e-readers, local table screens or reset systems.
 
-GitHub documentation was completed by Nova in `HANDOFF_2026-09-11_POSTER_REPAIR.md`.
+### Gate 1 — local image proof
 
-## Exact next task — poster functionality gate only
-
-Do not begin with full Content UI restyling.
-Do not replace the physical poster geometry yet.
-Do not modify Entrance Text logic, Presentation, VideoTXL, e-readers, local table screens or reset systems.
-
-First prove this chain in real VRChat:
+1. Stef identifies/selects the exact existing Plane/GameObject that must become the poster surface.
+2. Record its exact hierarchy path, Renderer and Material.
+3. Build one isolated local chain only:
 
 ```text
-readable-enough poster URL field
--> direct HTTPS image URL
--> Load / Apply
--> VRCImageDownloader success
--> texture visible on the CURRENT TEMPORARY poster surface
+standalone VRCUrlInputField
+-> one existing-style tablet button
+-> VRCImageDownloader
+-> renderer/material on Stef's selected plane
 ```
 
-Procedure:
-1. Inspect whether the direct test URL/readability edits are actually present in the real Unity scene.
-2. Make only the smallest missing change if required.
-3. Build & Run / test in a real VRChat client.
-4. Use a known direct URL such as `https://i.imgur.com/oaEbiM2.png`.
-5. If it fails, capture the real `VRCImageDownloader` error/status and repair only that failing link.
-6. If it succeeds, record URL -> image visible as accepted technical evidence.
-7. STOP before broad styling or geometry work.
+4. Do not involve VideoTXL.
+5. Do not create a new Cube, Quad, frame or replacement poster mesh.
+6. Test in a real VRChat client with a direct image URL such as `https://i.imgur.com/oaEbiM2.png`.
+7. Gate passes only when:
 
-## Planned order after poster functionality passes
+```text
+URL visible
+-> click Load
+-> downloader succeeds
+-> image visible on Stef's selected plane
+```
 
-1. Restyle the Content/Entrance/Poster editor controls to match the existing Classroom tablet.
-2. Reuse existing tablet visual/technical patterns instead of inventing a parallel UI system.
-3. Stef identifies/selects the exact existing Plane/GameObject intended for the poster.
-4. Adapt the proven image-loading path to that renderer/material.
-5. Do not generate a replacement Cube/Quad/frame unless Stef explicitly requests it.
-6. Then continue movement/scale/network/late-join/persistence acceptance in small tests.
+8. STOP and record the evidence before adding another layer.
+
+## After Gate 1 passes
+
+Add one responsibility at a time and test immediately:
+1. authorization / tablet lock;
+2. PlayerData only where useful;
+3. synchronized current-instance URL/state;
+4. movement/placement if Stef still wants it;
+5. uniform scale if still wanted;
+6. multiplayer / late join / host-leave acceptance.
+
+Only after the technical chain works should the Content/Entrance/Poster UI be restyled.
 
 ## UI style rule
 
@@ -132,11 +135,13 @@ Prefer reusing/copying from known-good existing controls:
 - input-field technique;
 - layers/raycast conventions.
 
+Prefer duplicating existing good tablet elements over generating parallel UI designs.
 Compile or Play Mode success does not prove UI acceptance. Stef's visual check is required.
 
 ## Protected proven systems
 
 Unless Stef explicitly requests otherwise, protect:
+- currently working Entrance Text logic;
 - proven Presentation Core + integration;
 - exact VideoTXL 2.5.1;
 - physical projector/screen path;
@@ -144,8 +149,7 @@ Unless Stef explicitly requests otherwise, protect:
 - PlayerData reading progress pattern;
 - Marker Pro reset;
 - local table screens;
-- unrelated tablet/navigation systems;
-- currently working Entrance Text logic.
+- unrelated tablet/navigation systems.
 
 Presentation acceptance remains valid, including:
 - real two-client sync;
@@ -162,13 +166,13 @@ The selected older backup remains a valid safety fallback.
 
 Do not discard it.
 
-If narrow current-scene repair causes further broad breakage or becomes harder to reason about, Stef may still choose the 2026-09-10 rollback route.
+If the narrow rebuild causes broad breakage or becomes harder to reason about, Stef may still choose the 2026-09-10 rollback route.
 
 Do not silently switch strategies; Stef decides.
 
 ## Working method
 
-- Stef builds/approves visual Canvas/UI layout.
+- Stef identifies/approves visual objects and Canvas layout.
 - Nova/ChatGPT guides one microstep at a time.
 - Codex is used only for small, bounded technical tasks.
 - Never batch multiple visual/UI changes.
