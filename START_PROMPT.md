@@ -33,64 +33,106 @@ Do not edit those other repositories unless Stef explicitly asks.
 ## Read first — mandatory
 
 1. `AGENTS.md`
-2. `CURRENT_WORK.md`
-3. `RECOVERY_DECISION_2026-09-10.md`
-4. `WORKLOG_2026-09-08.md`
+2. `HANDOFF_2026-09-11_POSTER_REPAIR.md`
+3. `CURRENT_WORK.md`
+4. `RECOVERY_DECISION_2026-09-10.md`
+5. `WORKLOG_2026-09-08.md`
 
-Only read Entrance Text / Poster implementation documents after recovery if their technical design becomes relevant again. They describe attempted work and useful architecture, but they are **not an accepted current scene baseline**.
+`HANDOFF_2026-09-11_POSTER_REPAIR.md` contains the newest session decision and temporarily overrides the older rollback-only instruction where they conflict.
 
-## Critical current truth — 2026-09-10
+The 2026-09-10 recovery decision remains useful history and the older backup remains a safe fallback. It is **not the current immediate action** because Stef has deliberately chosen to cautiously repair the current scene first.
 
-The later title/poster/Content-tab Unity scene is **rejected as a usable baseline**.
+## Critical current truth — 2026-09-11
 
-Stef inspected the real project and reported:
-- the Canvas/tablet layout is badly disturbed;
-- multiple/all relevant buttons no longer work correctly;
-- the problem is partly visual and should not be repaired by more autonomous scene editing.
+Stef is keeping the current scene for now and attempting a narrow repair rather than immediately restoring the older backup.
 
-Therefore:
+Current user-observed state:
+- Entrance/welcome text is functionally working well enough;
+- Entrance editor UI looks inconsistent with the established tablet style, but that is parked;
+- Presentation/PowerPoint UI styling is not a current priority;
+- the poster is the active technical problem;
+- poster URL input can receive focus/type input in VRChat, but readability is poor;
+- image loading has not yet passed a real VRChat test;
+- the generated poster physical hierarchy does not match Stef's intended existing-plane design.
 
-**DO NOT REPAIR THE CURRENT BROKEN SCENE.**
+A read-only investigation found several UI/style inconsistencies and an accidental shared Claim-button reference.
+Stef manually cleared `PersistentPosterEditorUI.claimButton` to `None`.
+Do not rebuild broad UI or infer that this fixed the poster itself.
 
-**DO NOT CONTINUE BUILDING ON IT.**
+A previous real VRChat log showed a concrete poster failure:
 
-Stef selected the rollback backup that already contains the working **persistent welcome/body text**, but predates:
-- editable entrance title;
-- Persistent Poster runtime/scene integration;
-- `Panel (Content)` / index-8 integration.
+```text
+https://imgur.com/oaEbiM2.png
+-> VRCImageDownloader
+-> Redirect limit exceeded
+```
 
-The restored backup is only a **candidate baseline** until Stef herself visually and functionally approves it.
+The next test must use a direct final image URL such as:
 
-Earlier compile/editor/Play Mode notes never override Stef's later real visual/functional rejection.
+`https://i.imgur.com/oaEbiM2.png`
 
-## Exact next task — recovery only
+This is only a test URL. Do not add Imgur-specific logic; the poster must remain generic for valid direct HTTPS image URLs supported by VRChat.
 
-1. Restore the selected backup if Stef has not already done so.
-2. Do not copy/merge scene objects from the broken project into the backup.
-3. Open the restored project and allow Unity to finish importing/compiling.
-4. Verify only:
-   - old tablet/canvas layout is restored;
-   - pre-existing buttons work again;
-   - Presentation remains present;
-   - exact VideoTXL 2.5.1 remains present;
-   - e-reader/library remains present;
-   - reset systems remain present.
-5. Add no new feature.
-6. Redesign nothing.
-7. Report exactly what the restored backup contains.
-8. **STOP for Stef's visual approval.**
+## Interrupted Codex boundary
 
-## What is rolled back
+Codex reported it was making only two narrow scene edits:
+- use the direct `i.imgur.com` test URL;
+- make the existing poster URL input readable enough to test.
 
-Treat later scene/UI/runtime changes after the selected backup as discarded baseline work, including where absent from the backup:
-- Entrance Text V1.1 editable-title/UI additions;
-- Persistent Poster scene/runtime integration;
-- `eDit` / `Panel (Content)` index-8 tab;
-- moving Entrance Text into that Content panel;
-- poster editor layout/wiring;
-- related later scene changes.
+Codex then ran out of credits while updating GitHub documentation.
 
-Do not delete their GitHub documentation. It remains research/history/reference only.
+Therefore first inspect the real Unity scene and verify whether those local edits actually completed. Do not blindly reapply them.
+
+GitHub documentation was completed by Nova in `HANDOFF_2026-09-11_POSTER_REPAIR.md`.
+
+## Exact next task — poster functionality gate only
+
+Do not begin with full Content UI restyling.
+Do not replace the physical poster geometry yet.
+Do not modify Entrance Text logic, Presentation, VideoTXL, e-readers, local table screens or reset systems.
+
+First prove this chain in real VRChat:
+
+```text
+readable-enough poster URL field
+-> direct HTTPS image URL
+-> Load / Apply
+-> VRCImageDownloader success
+-> texture visible on the CURRENT TEMPORARY poster surface
+```
+
+Procedure:
+1. Inspect whether the direct test URL/readability edits are actually present in the real Unity scene.
+2. Make only the smallest missing change if required.
+3. Build & Run / test in a real VRChat client.
+4. Use a known direct URL such as `https://i.imgur.com/oaEbiM2.png`.
+5. If it fails, capture the real `VRCImageDownloader` error/status and repair only that failing link.
+6. If it succeeds, record URL -> image visible as accepted technical evidence.
+7. STOP before broad styling or geometry work.
+
+## Planned order after poster functionality passes
+
+1. Restyle the Content/Entrance/Poster editor controls to match the existing Classroom tablet.
+2. Reuse existing tablet visual/technical patterns instead of inventing a parallel UI system.
+3. Stef identifies/selects the exact existing Plane/GameObject intended for the poster.
+4. Adapt the proven image-loading path to that renderer/material.
+5. Do not generate a replacement Cube/Quad/frame unless Stef explicitly requests it.
+6. Then continue movement/scale/network/late-join/persistence acceptance in small tests.
+
+## UI style rule
+
+The existing Classroom tablet is the visual source of truth.
+
+Prefer reusing/copying from known-good existing controls:
+- TMP font/material presets;
+- button sprites;
+- hover/pressed/disabled transitions;
+- colors;
+- sizing/padding;
+- input-field technique;
+- layers/raycast conventions.
+
+Compile or Play Mode success does not prove UI acceptance. Stef's visual check is required.
 
 ## Protected proven systems
 
@@ -101,11 +143,11 @@ Unless Stef explicitly requests otherwise, protect:
 - e-reader/library architecture;
 - PlayerData reading progress pattern;
 - Marker Pro reset;
-- working restored tablet/navigation;
 - local table screens;
-- unrelated scene objects.
+- unrelated tablet/navigation systems;
+- currently working Entrance Text logic.
 
-Presentation acceptance remains valid despite the later UI rollback, including:
+Presentation acceptance remains valid, including:
 - real two-client sync;
 - cross-client slide control;
 - OFF/ON resume;
@@ -114,29 +156,27 @@ Presentation acceptance remains valid despite the later UI rollback, including:
 
 A separate formal Quest-headset PASS is not documented.
 
-## After recovery acceptance
+## Backup / recovery fallback
 
-Only after Stef explicitly approves the restored scene:
+The selected older backup remains a valid safety fallback.
 
-1. manually separate `Collider_Entrance` from the welcome Canvas while preserving local Open/dismiss behaviour;
-2. Stef manually creates the new tablet tab and visual UI;
-3. reconnect existing welcome-text logic one tiny reference/button step at a time;
-4. add editable welcome title only after the new UI is visually approved;
-5. reconsider the poster from first principles;
-6. keep poster URL + uniform scale controls on the tablet so tablet lock/VIP rules protect those settings;
-7. inspect simple physical movement references such as the globe only where useful;
-8. investigate a VRChat-supported persistent URL route, including persistent PlayerObject where technically appropriate;
-9. do not automatically recreate the rejected `PersistentPoster*` implementation.
+Do not discard it.
 
-## Working method after recovery
+If narrow current-scene repair causes further broad breakage or becomes harder to reason about, Stef may still choose the 2026-09-10 rollback route.
 
-- Stef builds most visual Canvas/UI layout manually.
+Do not silently switch strategies; Stef decides.
+
+## Working method
+
+- Stef builds/approves visual Canvas/UI layout.
 - Nova/ChatGPT guides one microstep at a time.
 - Codex is used only for small, bounded technical tasks.
 - Never batch multiple visual/UI changes.
 - Test immediately after every small change.
-- Compile/Play Mode success is not proof of visual acceptance.
-- Stef's visual check is required for UI acceptance.
+- No broad refactors.
+- No autonomous visual redesign.
+- Do not claim VRChat/Quest/multiplayer proof without real evidence.
+- Real tested Unity/VRChat behaviour outranks docs.
 
 ## Working style
 
@@ -145,10 +185,7 @@ Only after Stef explicitly approves the restored scene:
 - explain what and why before technique;
 - one manual Unity action at a time;
 - exact GameObject/component/Inspector field when known;
-- no broad refactors;
-- no autonomous visual redesign;
-- do not claim VRChat/Quest/multiplayer proof without real evidence;
-- GitHub is durable project memory, but the **restored and Stef-approved Unity scene is authoritative scene truth**.
+- GitHub is durable project memory, but the real tested Unity scene remains authoritative scene truth.
 
 ## Session close
 
