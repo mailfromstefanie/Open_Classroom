@@ -1,8 +1,8 @@
-﻿using UdonSharp;
+using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
-
-namespace StefanieInVR.PaperTablet { }
+using VRC.Udon;
+using StefanieInVR.Presentation;
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class TXLScreenAutoVisibility : UdonSharpBehaviour
@@ -16,6 +16,9 @@ public class TXLScreenAutoVisibility : UdonSharpBehaviour
 
     [Tooltip("The projector screen cloth object with SkinnedMeshRenderer and blendshape.")]
     public GameObject projectorScreenObject;
+
+    [Tooltip("Optional Presentation controller. While Presentation Mode is active, the physical screen stays visible even though VideoTXL is locally suspended.")]
+    public PresentationController presentationController;
 
     [Header("Projector Gate")]
     [Tooltip("Same blendshape index as the projector toggle script.")]
@@ -40,7 +43,7 @@ public class TXLScreenAutoVisibility : UdonSharpBehaviour
     public bool includeChildColliders = false;
 
     [Header("Performance")]
-    [Tooltip("How often visibility is checked. 0.25 is usually light and fast enough.")]
+    [Tooltip("How often visibility is checked.")]
     [Range(0.05f, 1f)]
     public float pollInterval = 0.25f;
 
@@ -48,12 +51,20 @@ public class TXLScreenAutoVisibility : UdonSharpBehaviour
     private SkinnedMeshRenderer projectorRenderer;
     private Collider[] screenColliders;
 
+    // Runtime UdonBehaviour belonging to VideoTXL.
+    // We only READ variables from it.
+    private UdonBehaviour txlUdonBehaviour;
+
     private float nextPollTime;
     private bool lastVisible;
+
+    private const string PlayerStateVariable = "playerState";
+    private const string PausedVariable = "paused";
 
     private void Start()
     {
         CacheComponents();
+        TryCacheTxlUdonBehaviour();
         ApplyVisibility(true);
     }
 
@@ -65,6 +76,13 @@ public class TXLScreenAutoVisibility : UdonSharpBehaviour
         }
 
         nextPollTime = Time.time + pollInterval;
+
+        // If VideoTXL was not ready during Start, try again later.
+        if (!Utilities.IsValid(txlUdonBehaviour))
+        {
+            TryCacheTxlUdonBehaviour();
+        }
+
         ApplyVisibility(false);
     }
 
@@ -78,53 +96,111 @@ public class TXLScreenAutoVisibility : UdonSharpBehaviour
             {
                 if (includeChildColliders)
                 {
-                    screenColliders = txlScreenObject.GetComponentsInChildren<Collider>(true);
+                    screenColliders =
+                        txlScreenObject.GetComponentsInChildren<Collider>(true);
                 }
                 else
                 {
-                    screenColliders = txlScreenObject.GetComponents<Collider>();
+                    screenColliders =
+                        txlScreenObject.GetComponents<Collider>();
                 }
             }
         }
 
         if (projectorScreenObject != null)
         {
-            projectorRenderer = projectorScreenObject.GetComponent<SkinnedMeshRenderer>();
+            projectorRenderer =
+                projectorScreenObject.GetComponent<SkinnedMeshRenderer>();
         }
     }
 
-    private void ApplyVisibility(bool force)
+    private void TryCacheTxlUdonBehaviour()
     {
         if (!Utilities.IsValid(txlPlayer))
         {
             return;
         }
 
+        UdonBehaviour[] behaviours =
+            txlPlayer.gameObject.GetComponents<UdonBehaviour>();
+
+        for (int i = 0; i < behaviours.Length; i++)
+        {
+            UdonBehaviour candidate = behaviours[i];
+
+            if (!Utilities.IsValid(candidate))
+            {
+                continue;
+            }
+
+            // Do NOT use txlPlayer.playerState directly.
+            // Look for the Udon program that contains VideoTXL's runtime state.
+            object stateValue =
+                candidate.GetProgramVariable(PlayerStateVariable);
+
+            if (stateValue != null)
+            {
+                txlUdonBehaviour = candidate;
+                return;
+            }
+        }
+    }
+
+    private void ApplyVisibility(bool force)
+    {
         if (screenRenderer == null || projectorRenderer == null)
         {
             return;
         }
 
-        float weight = projectorRenderer.GetBlendShapeWeight(blendShapeIndex);
-        bool projectorOpen = weight >= openThreshold;
+        float weight =
+            projectorRenderer.GetBlendShapeWeight(blendShapeIndex);
 
-        int state = txlPlayer.playerState;
+        bool projectorOpen =
+            weight >= openThreshold;
+
         bool txlShouldBeVisible = false;
 
-        if (state == Texel.TXLVideoPlayer.VIDEO_STATE_LOADING)
+        // Read VideoTXL state only when its UdonBehaviour is available.
+        if (Utilities.IsValid(txlUdonBehaviour))
         {
-            txlShouldBeVisible = showWhenLoading;
-        }
-        else if (state == Texel.TXLVideoPlayer.VIDEO_STATE_PLAYING)
-        {
-            txlShouldBeVisible = txlPlayer.paused ? showWhenPaused : true;
-        }
-        else
-        {
-            txlShouldBeVisible = false;
+            object stateValue =
+                txlUdonBehaviour.GetProgramVariable(PlayerStateVariable);
+
+            object pausedValue =
+                txlUdonBehaviour.GetProgramVariable(PausedVariable);
+
+            if (stateValue != null)
+            {
+                int state = (int)stateValue;
+
+                bool isPaused = false;
+
+                if (pausedValue != null)
+                {
+                    isPaused = (bool)pausedValue;
+                }
+
+                if (state == Texel.TXLVideoPlayer.VIDEO_STATE_LOADING)
+                {
+                    txlShouldBeVisible = showWhenLoading;
+                }
+                else if (state == Texel.TXLVideoPlayer.VIDEO_STATE_PLAYING)
+                {
+                    txlShouldBeVisible =
+                        isPaused ? showWhenPaused : true;
+                }
+            }
         }
 
-        bool visible = projectorOpen && txlShouldBeVisible;
+        // Presentation Mode is independent from VideoTXL playback.
+        bool presentationShouldBeVisible =
+            Utilities.IsValid(presentationController) &&
+            presentationController.modeActive;
+
+        bool visible =
+            projectorOpen &&
+            (txlShouldBeVisible || presentationShouldBeVisible);
 
         if (!force && visible == lastVisible)
         {
