@@ -2,7 +2,7 @@
 
 ## Entry point role
 
-This is the **direct Open Classroom / Codex specialist prompt**.
+This is the direct Open Classroom specialist prompt.
 
 For Stef's normal Nova/ChatGPT entrypoint across Cinema, Open Classroom and Presentation Service, use:
 
@@ -10,189 +10,251 @@ For Stef's normal Nova/ChatGPT entrypoint across Cinema, Open Classroom and Pres
 
 The Hub routes cross-project work. It never overrides this repository or the real Stef-approved Unity scene.
 
-See also: `PROJECT_HUB.md`.
-
----
-
-## Primary project
-
-Repository:
-
-`mailfromstefanie/Open_Classroom`
-
 Real Unity project:
 
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
-Cross-project context only:
-- `mailfromstefanie/StefanieInVR-Presentation-Service`
-- `mailfromstefanie/Stefanies-Art-House-Cinema`
-
-Do not edit those other repositories unless Stef explicitly asks.
-
 ## Read first — mandatory
 
+Read in this order:
+
 1. `AGENTS.md`
-2. `HANDOFF_2026-09-11_POSTER_REPAIR.md`
+2. `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
 3. `CURRENT_WORK.md`
-4. `RECOVERY_DECISION_2026-09-10.md`
-5. `WORKLOG_2026-09-08.md`
+4. only then older historical/recovery docs if needed
 
-`HANDOFF_2026-09-11_POSTER_REPAIR.md` contains the newest session truth and overrides older poster/rollback instructions where they conflict.
+The 2026-09-12 handoff is the newest session truth and overrides older poster claims where they conflict.
 
-The 2026-09-10 rollback backup remains a protected fallback. Do not discard it. The current immediate direction is a narrow poster rebuild, not an automatic rollback and not continued repair of the rejected generated poster.
+Historical files that are NOT current poster truth:
+- `HANDOFF_2026-09-11_POSTER_REPAIR.md` = failed generated-poster state and rebuild decision;
+- `PERSISTENT_POSTER_IMPLEMENTATION_2026-09-10.md` = rejected older generated implementation;
+- `RECOVERY_DECISION_2026-09-10.md` = rollback/recovery safety context.
 
-## Critical current truth — 2026-09-11
+Do not ask Stef to choose between these documents. Route to the newest truth automatically.
 
-Current user-observed state:
-- Entrance/welcome text is functionally working well enough;
-- Entrance editor UI looks inconsistent with the established tablet style, but styling is parked;
-- Presentation/PowerPoint UI styling is not a current priority;
-- the current generated Persistent Poster has **failed functional acceptance**;
-- in a real VRChat test the poster URL field can accept visible text after a narrow input correction;
-- Load/Apply and the other current poster controls were not operable;
-- no poster image appeared;
-- the generated Cube/Quad physical poster does not match Stef's intended existing-plane design.
+## Critical current truth — 2026-09-12
 
-A previous real VRChat log showed:
+Open Classroom is on a usable manual-development baseline.
 
-```text
-https://imgur.com/oaEbiM2.png
--> VRCImageDownloader
--> Redirect limit exceeded
-```
+Protected systems:
+- Presentation Core/integration is proven and must not be rebuilt;
+- VideoTXL stays pinned to exact 2.5.1;
+- Entrance title/body persistence is a useful proven pattern;
+- e-reader/library and PlayerData reading progress are preserved;
+- local table screens and reset systems are protected.
 
-Use a direct final test URL such as:
+Active task:
 
-`https://i.imgur.com/oaEbiM2.png`
+**finish acceptance of the manually rebuilt Persistent Poster, then add persistence as a separate layer.**
 
-This is only a test URL. Do not add Imgur-specific logic; the final poster must remain generic for valid direct HTTPS image URLs supported by VRChat.
-
-Technical findings from the failed implementation:
-- there is one active poster `VRCUrlInputField`, not duplicate fields over each other;
-- `onEndEdit` and `onValueChanged` are empty, so confirming the URL field alone does not start the image downloader;
-- Load/Apply depends on `posterInitialized && playerDataReady && IsLocalChangeAllowedByLock()`;
-- the current visible poster surface is a generated temporary Quad, not Stef's intended existing plane;
-- Stef manually cleared the erroneous `PersistentPosterEditorUI.claimButton` reference back to `None`.
-
-Do not spend the next session untangling all old authorization/UI coupling before proving the basic image chain independently.
-
-## Exact next task — NARROW POSTER REBUILD
-
-Do **not** continue repairing the current generated Persistent Poster implementation as the preferred route.
-Do **not** begin with persistence, synchronization, movement, scale, authorization, or full UI styling.
-Do **not** modify Entrance Text logic, Presentation, VideoTXL, e-readers, local table screens or reset systems.
-
-### Gate 1 — local image proof
-
-1. Stef identifies/selects the exact existing Plane/GameObject that must become the poster surface.
-2. Record its exact hierarchy path, Renderer and Material.
-3. Build one isolated local chain only:
+## Current poster architecture
 
 ```text
-standalone VRCUrlInputField
--> one existing-style tablet button
--> VRCImageDownloader
--> renderer/material on Stef's selected plane
+Persistent_Poster                 <- physical pickup root
+├─ existing VRCObjectSync         <- position + rotation
+├─ VRC Pickup / Rigidbody
+├─ PosterImageLoaderLocal
+├─ Scale_Root
+│  ├─ Persistent_Poster           <- square image surface
+│  └─ Persistent_Poster_Edge      <- visual only
+├─ Persistent_Poster_Handle       <- pickup outline renderer
+└─ Poster Grip                    <- Exact Grip
+
+Managers
+├─ Poster Shared State            <- URL / hasPoster shared state
+└─ Poster Scale Manager           <- scale shared state
 ```
 
-4. Do not involve VideoTXL.
-5. Do not create a new Cube, Quad, frame or replacement poster mesh.
-6. Test in a real VRChat client with a direct image URL such as `https://i.imgur.com/oaEbiM2.png`.
-7. Gate passes only when:
+Rules:
+- do not add a second VRCObjectSync;
+- poster remains square;
+- no aspect-ratio automation;
+- non-square images may stretch;
+- scale is uniform;
+- top-root VRCObjectSync remains responsible for physical position/rotation.
+
+## Proven poster evidence
+
+### Image loading
+
+Direct `VRCImageDownloader` loading works.
+Use direct final image URLs, for example:
 
 ```text
-URL visible
--> click Load
--> downloader succeeds
--> image visible on Stef's selected plane
+https://i.imgur.com/klSe3ij.jpg
+https://i.imgur.com/GhVNVXv.jpeg
+https://i.imgur.com/oaEbiM2.png
 ```
 
-8. STOP and record the evidence before adding another layer.
+Do not add Imgur-specific logic.
 
-## After Gate 1 passes
+### Multiplayer URL/image sharing
 
-Add one responsibility at a time and test immediately:
-1. authorization / tablet lock;
-2. PlayerData only where useful;
-3. synchronized current-instance URL/state;
-4. movement/placement if Stef still wants it;
-5. uniform scale if still wanted;
-6. multiplayer / late join / host-leave acceptance.
+Two-player current-instance URL/image synchronization was explicitly reported working.
 
-Only after the technical chain works should the Content/Entrance/Poster UI be restyled.
+The working ownership rule is:
 
-## UI style rule
+```text
+SetOwner if needed
+-> wait one frame
+-> verify/retry ownership
+-> write synced state
+-> RequestSerialization
+```
 
-The existing Classroom tablet is the visual source of truth.
+Do not regress to immediate SetOwner + serialization in the same frame.
 
-Prefer reusing/copying from known-good existing controls:
-- TMP font/material presets;
-- button sprites;
-- hover/pressed/disabled transitions;
-- colors;
-- sizing/padding;
-- input-field technique;
-- layers/raycast conventions.
+### Scale
 
-Prefer duplicating existing good tablet elements over generating parallel UI designs.
-Compile or Play Mode success does not prove UI acceptance. Stef's visual check is required.
+Local scale is confirmed working.
 
-## Protected proven systems
+Use:
 
-Unless Stef explicitly requests otherwise, protect:
-- currently working Entrance Text logic;
-- proven Presentation Core + integration;
-- exact VideoTXL 2.5.1;
-- physical projector/screen path;
-- e-reader/library architecture;
-- PlayerData reading progress pattern;
-- Marker Pro reset;
-- local table screens;
-- unrelated tablet/navigation systems.
+```text
+Min Scale      = 1
+Max Scale      = 5
+Default Scale  = 1
+Sync Delay     = 0.35
 
-Presentation acceptance remains valid, including:
-- real two-client sync;
-- cross-client slide control;
-- OFF/ON resume;
-- late join;
-- VideoTXL local suspend/restore.
+Slider Min     = 1
+Slider Max     = 5
+Slider Value   = 1
+Whole Numbers  = OFF
+```
 
-A separate formal Quest-headset PASS is not documented.
+Meaning: slider `1` = 1x, `5` = 5x.
+Local scaling is immediate; network commit waits about 0.35 seconds after movement stops.
 
-## Backup / recovery fallback
+## Latest poster changes — NOT YET ACCEPTED
 
-The selected older backup remains a valid safety fallback.
+### Emission
 
-Do not discard it.
+There is no emission toggle.
 
-If the narrow rebuild causes broad breakage or becomes harder to reason about, Stef may still choose the 2026-09-10 rollback route.
+Required behaviour:
 
-Do not silently switch strategies; Stef decides.
+```text
+no poster -> emission OFF
+successful load -> same image in emission map + emission ON
+Unload -> image/default restored + emission texture cleared + emission OFF
+```
 
-## Working method
+Current expected shader properties:
+- `_EmissionMap`;
+- `_EmissionColor`.
 
-- Stef identifies/approves visual objects and Canvas layout.
-- Nova/ChatGPT guides one microstep at a time.
-- Codex is used only for small, bounded technical tasks.
-- Never batch multiple visual/UI changes.
-- Test immediately after every small change.
-- No broad refactors.
-- No autonomous visual redesign.
-- Do not claim VRChat/Quest/multiplayer proof without real evidence.
-- Real tested Unity/VRChat behaviour outranks docs.
+### Shared unload
 
-## Working style
+Unload button must call:
 
-- Dutch to Stef;
-- beginner-friendly;
-- explain what and why before technique;
-- one manual Unity action at a time;
-- exact GameObject/component/Inspector field when known;
-- GitHub is durable project memory, but the real tested Unity scene remains authoritative scene truth.
+```text
+Poster Shared State
+-> UdonBehaviour.SendCustomEvent(string)
+-> UnloadPoster
+```
 
-## Session close
+Do not wire the UI directly to local `UnloadImage()`.
 
-Update Open Classroom truth only for what actually changed/tested.
-Update `mailfromstefanie/StefanieInVR-Project-Hub/CURRENT_ECOSYSTEM.md` only when the recovery/milestone changes the cross-project picture.
-Do not rewrite the Hub master startprompt after ordinary Classroom work.
+Latest code references:
+- `Scripts/UIManagers/PosterImageLoaderLocal.cs`;
+- `Scripts/UIManagers/PosterSharedState.cs`;
+- `Scripts/UIManagers/PosterScaleManager.cs`.
+
+## TXLScreenAutoVisibility — regression gate
+
+Recompiling Udon exposed an old custom direct-field problem:
+
+```text
+Field is not exposed to Udon: 'txlPlayer.playerState'
+```
+
+Do NOT modify VideoTXL itself.
+
+Corrected reference:
+
+`Scripts/UIManagers/TXLScreenAutoVisibility.cs`
+
+It now reads VideoTXL `playerState` and `paused` through `UdonBehaviour.GetProgramVariable(...)`.
+
+It MUST preserve the Presentation switch rule:
+
+```text
+projector open
+AND
+(VideoTXL visible OR presentationController.modeActive)
+```
+
+An old duplicate script copy under the obsolete `Assets/#Classroom/...Only_Visible_If_Blendshape_Is_Toggle/` route was deleted by Stef.
+The manager-side script remains and must not be deleted.
+
+Test before calling this fixed:
+1. normal VideoTXL playback;
+2. Video -> Presentation;
+3. slide navigation;
+4. Presentation -> Video;
+5. pause/play;
+6. projector open/close.
+
+## Persistence — planned next, not implemented
+
+Do NOT start a new session by immediately writing persistence code.
+
+Desired saved poster state:
+- URL / hasPoster;
+- position;
+- rotation;
+- scale.
+
+Current design direction:
+- keep existing live systems intact;
+- add persistence as a separate storage layer;
+- investigate/use persistent PlayerObject + `VRCEnablePersistence` for secure URL/state where appropriate;
+- keep only ONE physical poster in the scene;
+- do not turn the physical pickup into a per-player duplicate.
+
+Likely split:
+
+```text
+LIVE INSTANCE
+PosterSharedState   -> URL + hasPoster
+VRCObjectSync       -> position + rotation
+PosterScaleManager  -> scale
+
+PERSISTENCE STORAGE
+persistent PlayerObject
+-> saved URL/hasPoster
+-> saved position
+-> saved rotation
+-> saved scale
+```
+
+Persistence is user-bound unless an external backend is deliberately introduced later.
+
+## Exact next session
+
+Stef made a fresh backup before testing further.
+
+Start here:
+
+1. confirm Unity/Udon compile clean;
+2. test VideoTXL <-> Presentation switching;
+3. local poster Load -> emission ON -> Unload -> emission OFF;
+4. two-player Load/Unload + scale + movement/reset + late join where practical;
+5. record results;
+6. only then implement persistence.
+
+## Working method with Stef
+
+- Dutch;
+- noob-friendly;
+- one small manual Unity action at a time;
+- explain why before technical action;
+- inspect screenshots rather than inventing scene state;
+- complete scripts when replacement is needed;
+- backup before meaningful risk;
+- no broad refactors;
+- no autonomous visual redesign;
+- Codex only for small bounded work when Stef explicitly wants it;
+- tested real Unity/VRChat behaviour outranks documentation.
+
+If Stef pastes only this prompt and asks no specific question, give a compact status and ask whether she wants to continue exactly where the test gate stopped or do something else.
