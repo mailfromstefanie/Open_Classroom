@@ -8,8 +8,6 @@ For a normal new Nova/ChatGPT conversation across the StefanieInVR ecosystem, us
 
 `mailfromstefanie/StefanieInVR-Project-Hub/STARTPROMPT.txt`
 
-The Hub routes to this repository when Classroom truth is needed. It never overrides the real Unity scene or this repository's current-work evidence.
-
 For a deliberately Classroom-only / Codex specialist session, use:
 
 `START_PROMPT.md`
@@ -20,52 +18,52 @@ Read in this order for current Classroom work:
 
 1. `START_PROMPT.md`
 2. `AGENTS.md`
-3. `CURRENT_WORK.md`
-4. `RECOVERY_DECISION_2026-09-10.md`
-5. only the additional feature/history files named by the current task
+3. `HANDOFF_2026-09-12_BETA_LIVE.md`
+4. `CURRENT_WORK.md`
+5. feature-specific references only when needed
 
-Useful durable references when relevant:
+Useful durable references:
 
 - `PRESENTATION_ACCEPTANCE_2026-09-05.md` — proven Presentation acceptance;
-- `WORKLOG_2026-09-08.md` — stabilization history and PlayerData/Marker work;
+- `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` — accepted manual poster baseline;
 - `EREADER_LIBRARY_HANDOFF_2026-09-05.md` — e-reader/library architecture;
-- `PERFORMANCE_AUDIT_2026-09-05.md` — performance findings before related optimization;
-- Entrance Text / Poster implementation documents — research/history only unless explicitly reactivated after recovery.
+- `PERFORMANCE_AUDIT_2026-09-05.md` — performance findings;
+- `WORKLOG_2026-09-08.md` — stabilization history;
+- older recovery/poster documents — historical evidence only when they do not conflict with current beta truth.
 
-## Current status — 2026-09-10
+## Current status — 2026-09-12
 
-**CONTROLLED RECOVERY.**
+**BETA WORLD LIVE.**
 
-The later editable-title / Persistent Poster / Content-tab scene is rejected as a working baseline after Stef inspected the real Unity project and found the tablet/canvas layout and button behaviour disturbed.
+The current Open Classroom build has been uploaded successfully and the beta-test world is running in VRChat.
 
-Do not fix forward from that broken scene.
+Stef has started recruiting beta testers through Facebook.
 
-The selected rollback backup is expected to retain:
+Current development mode:
 
-- working persistent editable entrance welcome/body text;
-- proven Presentation integration;
-- exact protected VideoTXL 2.5.1;
-- e-reader/library baseline;
-- reset systems;
-- earlier working tablet/canvas layout and controls.
+```text
+real beta use
+-> collect concrete bugs / confusion / UX friction
+-> reproduce
+-> smallest safe fix
+-> regression test
+-> update beta build
+```
 
-It predates:
+The project is no longer in the earlier controlled-recovery phase.
 
-- editable entrance title;
-- Persistent Poster runtime/scene integration;
-- `Panel (Content)` / index-8 integration.
+## Public beta contact / access
 
-The restored backup becomes the accepted baseline only after Stef restores it and visually/functionally approves the real Unity scene.
+Questions, feedback and access requests:
 
-Real Unity project:
+- `info@stefanieinvr.com`
+- `stefanieinvr.com`
 
-`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
+During beta, Classroom Admin access and Presentation upload access are granted manually.
 
-## Protected proven Presentation baseline
+## Protected Presentation baseline
 
-The later Classroom UI rollback does **not** invalidate the earlier Presentation acceptance.
-
-Proven/reported working in the tested setup:
+Proven/reported working before the beta launch:
 
 - standalone Presentation Core independent of VideoTXL;
 - own `VRCUnityVideoPlayer`;
@@ -75,40 +73,40 @@ Proven/reported working in the tested setup:
 - real two-client synchronization;
 - cross-client slide control;
 - OFF/ON resumes the same slot/slide;
-- late join works;
+- late join;
 - VideoTXL 2.5.1 local suspend/restore;
 - existing physical projector/screen path;
 - projector visibility;
 - brightness/contrast;
 - final physical-screen output;
-- Presentation UI integrated into the physical tablet.
-
-A separate formal Quest-headset PASS is not documented.
+- Presentation UI integrated into the paper tablet.
 
 Exact proof:
 
 `PRESENTATION_ACCEPTANCE_2026-09-05.md`
 
-## Recovery boundary
+VideoTXL remains pinned to exact version 2.5.1.
 
-Until the selected backup is restored and accepted:
+## Quest VideoTXL note
 
-- add no new Classroom feature;
-- do not rebuild the rejected Content tab automatically;
-- do not salvage scene objects from the broken later scene into the backup;
-- do not redesign Presentation, VideoTXL, e-reader/library, resets or unrelated systems;
-- compile/Play Mode success alone is not visual acceptance.
+A Quest-only vertically upside-down VideoTXL-output issue was investigated immediately before the beta upload.
 
-After Stef accepts the restored scene, the agreed direction is manual/incremental UI rebuilding with one small change and one immediate visual test at a time.
+The final suspected cause moved away from the physical screen and into the Quest Custom Render Texture / RenderOut path. A narrow CRT-material correction was prepared.
 
-## Source-of-truth rule
+Do not call that issue fully resolved until Stef confirms the uploaded beta build on Quest.
+
+See:
+
+`HANDOFF_2026-09-12_BETA_LIVE.md`
+
+## Beta source-of-truth rule
 
 ```text
-real restored + Stef-approved Unity scene
-→ CURRENT_WORK.md / recovery decision
-→ active feature evidence
-→ durable accepted references
-→ historical attempted implementation docs
+real uploaded/tested VRChat beta behaviour
+-> HANDOFF_2026-09-12_BETA_LIVE.md
+-> CURRENT_WORK.md
+-> accepted feature evidence
+-> older historical/recovery docs
 ```
 
-GitHub is durable project memory, but copied repository scene/script snapshots never outrank newer tested real Unity behaviour.
+GitHub is durable project memory, but the current real Unity/VRChat behaviour outranks documentation.
