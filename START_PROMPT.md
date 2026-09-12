@@ -8,7 +8,7 @@ For Stef's normal Nova/ChatGPT entrypoint across Cinema, Open Classroom and Pres
 
 `mailfromstefanie/StefanieInVR-Project-Hub/STARTPROMPT.txt`
 
-The Hub routes cross-project work. It never overrides this repository or the real Stef-approved Unity scene.
+The Hub routes cross-project work. It never overrides this repository or the real tested Unity/VRChat world.
 
 Real Unity project:
 
@@ -19,229 +19,156 @@ Real Unity project:
 Read in this order:
 
 1. `AGENTS.md`
-2. `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
+2. `HANDOFF_2026-09-12_BETA_LIVE.md`
 3. `CURRENT_WORK.md`
-4. only then older historical/recovery docs if needed
+4. `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` only when poster details matter
+5. older historical/recovery docs only when needed
 
-The 2026-09-12 handoff is the newest session truth and overrides older poster claims where they conflict.
+The live-beta handoff is the newest release-phase truth.
 
-Historical files that are NOT current poster truth:
-- `HANDOFF_2026-09-11_POSTER_REPAIR.md` = failed generated-poster state and rebuild decision;
-- `PERSISTENT_POSTER_IMPLEMENTATION_2026-09-10.md` = rejected older generated implementation;
-- `RECOVERY_DECISION_2026-09-10.md` = rollback/recovery safety context.
+Do not ask Stef to reconstruct older recovery history when current beta evidence already answers the question.
 
-Do not ask Stef to choose between these documents. Route to the newest truth automatically.
+## Critical current truth — beta world live
 
-## Critical current truth — 2026-09-12
+Open Classroom has been uploaded successfully and the beta-test world is running in VRChat.
 
-Open Classroom is on a usable manual-development baseline.
+Stef has started recruiting beta testers through Facebook.
 
-Protected systems:
-- Presentation Core/integration is proven and must not be rebuilt;
-- VideoTXL stays pinned to exact 2.5.1;
-- Entrance title/body persistence is a useful proven pattern;
-- e-reader/library and PlayerData reading progress are preserved;
-- local table screens and reset systems are protected.
-
-Active task:
-
-**finish acceptance of the manually rebuilt Persistent Poster, then add persistence as a separate layer.**
-
-## Current poster architecture
+Current phase:
 
 ```text
-Persistent_Poster                 <- physical pickup root
-├─ existing VRCObjectSync         <- position + rotation
-├─ VRC Pickup / Rigidbody
-├─ PosterImageLoaderLocal
-├─ Scale_Root
-│  ├─ Persistent_Poster           <- square image surface
-│  └─ Persistent_Poster_Edge      <- visual only
-├─ Persistent_Poster_Handle       <- pickup outline renderer
-└─ Poster Grip                    <- Exact Grip
-
-Managers
-├─ Poster Shared State            <- URL / hasPoster shared state
-└─ Poster Scale Manager           <- scale shared state
+real beta use
+-> collect concrete reports
+-> reproduce
+-> smallest safe fix
+-> regression test
+-> update beta build
 ```
 
-Rules:
-- do not add a second VRCObjectSync;
-- poster remains square;
-- no aspect-ratio automation;
-- non-square images may stretch;
-- scale is uniform;
-- top-root VRCObjectSync remains responsible for physical position/rotation.
+Do not default back to feature-building or broad cleanup.
 
-## Proven poster evidence
+## Public contact / access
 
-### Image loading
+Questions, feedback and access requests:
 
-Direct `VRCImageDownloader` loading works.
-Use direct final image URLs, for example:
+`info@stefanieinvr.com`
+
+`stefanieinvr.com`
+
+During beta:
+
+- Classroom Admin access is manual;
+- Presentation upload access is manual;
+- help/access can be requested by contacting Stef.
+
+## Protected systems
+
+Do not redesign these without reproduced beta evidence:
+
+- exact VideoTXL 2.5.1;
+- standalone Presentation Core;
+- VideoTXL Presentation adapter/local suspend-restore;
+- paper tablet structure/style;
+- projector/screen route;
+- brightness/contrast/custom screen behaviour;
+- e-reader/library;
+- PlayerData reading progress;
+- reset systems;
+- local table screens;
+- entrance-text persistence;
+- accepted manual Persistent Poster baseline.
+
+## Quest VideoTXL orientation — still needs explicit beta confirmation
+
+Immediately before beta upload:
+
+- Windows VideoTXL output was correct;
+- Quest VideoTXL output was vertically upside down;
+- Presentation on the same screen was correct;
+- hardcoding `currentInvert = true;` did not fix it;
+- investigation moved to the Quest Custom Render Texture / RenderOut path;
+- Codex identified an incorrect CRT update-material configuration as the likely root cause and prepared a narrow correction.
+
+Do not claim RESOLVED until Stef explicitly confirms the uploaded beta build on Quest.
+
+Keep VideoTXL 2.5.1 original orientation logic:
+
+```csharp
+currentInvert = !_IsQuest();
+```
+
+The hardcoded `true` version was only a diagnostic test.
+
+## Build/upload incident
+
+Before the successful beta upload, Unity build/upload was blocked by a compiler/package issue involving Memory Profiler/Burst. UdonSharp then blocked the VRChat build because Unity was not compile-clean.
+
+Memory Profiler was removed; Unity later hung and was restarted; the world then uploaded successfully.
+
+Treat this as Editor/build-pipeline history, not as proof of a Classroom runtime memory problem.
+
+## Presentation baseline
+
+Preserve the accepted architecture:
 
 ```text
-https://i.imgur.com/klSe3ij.jpg
-https://i.imgur.com/GhVNVXv.jpeg
-https://i.imgur.com/oaEbiM2.png
+Standalone Presentation Core
+-> own VRCUnityVideoPlayer
+-> synced semantic state
+-> dedicated VideoTXL adapter
+-> local VideoTXL suspend/restore
+-> existing physical projector/screen
 ```
 
-Do not add Imgur-specific logic.
+Previously proven/reported:
 
-### Multiplayer URL/image sharing
+- 10 slots;
+- First / Previous / Next;
+- automatic slide count;
+- real two-client synchronization;
+- cross-client control;
+- OFF/ON resumes saved slot/slide;
+- late join;
+- VideoTXL suspend/restore;
+- Presentation UI in paper tablet.
 
-Two-player current-instance URL/image synchronization was explicitly reported working.
+Exact acceptance:
 
-The working ownership rule is:
+`PRESENTATION_ACCEPTANCE_2026-09-05.md`
 
-```text
-SetOwner if needed
--> wait one frame
--> verify/retry ownership
--> write synced state
--> RequestSerialization
-```
+## Poster boundary
 
-Do not regress to immediate SetOwner + serialization in the same frame.
+Use `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` for detailed accepted manual poster architecture.
 
-### Scale
+Do not resurrect the rejected generated poster scene from 2026-09-10/11.
 
-Local scale is confirmed working.
+Do not infer full persistent URL/pose/scale storage is proven merely because the beta world is live.
 
-Use:
+## Beta triage rule
 
-```text
-Min Scale      = 1
-Max Scale      = 5
-Default Scale  = 1
-Sync Delay     = 0.35
+Classify reports first:
 
-Slider Min     = 1
-Slider Max     = 5
-Slider Value   = 1
-Whole Numbers  = OFF
-```
+1. blocker;
+2. functional bug;
+3. sync/multiplayer issue;
+4. Quest/PC platform issue;
+5. usability/confusion;
+6. polish request;
+7. future feature.
 
-Meaning: slider `1` = 1x, `5` = 5x.
-Local scaling is immediate; network commit waits about 0.35 seconds after movement stops.
+Only the first five normally justify immediate beta work.
 
-## Latest poster changes — NOT YET ACCEPTED
+## Exact next work
 
-### Emission
+Start with real evidence, not speculative changes:
 
-There is no emission toggle.
-
-Required behaviour:
-
-```text
-no poster -> emission OFF
-successful load -> same image in emission map + emission ON
-Unload -> image/default restored + emission texture cleared + emission OFF
-```
-
-Current expected shader properties:
-- `_EmissionMap`;
-- `_EmissionColor`.
-
-### Shared unload
-
-Unload button must call:
-
-```text
-Poster Shared State
--> UdonBehaviour.SendCustomEvent(string)
--> UnloadPoster
-```
-
-Do not wire the UI directly to local `UnloadImage()`.
-
-Latest code references:
-- `Scripts/UIManagers/PosterImageLoaderLocal.cs`;
-- `Scripts/UIManagers/PosterSharedState.cs`;
-- `Scripts/UIManagers/PosterScaleManager.cs`.
-
-## TXLScreenAutoVisibility — regression gate
-
-Recompiling Udon exposed an old custom direct-field problem:
-
-```text
-Field is not exposed to Udon: 'txlPlayer.playerState'
-```
-
-Do NOT modify VideoTXL itself.
-
-Corrected reference:
-
-`Scripts/UIManagers/TXLScreenAutoVisibility.cs`
-
-It now reads VideoTXL `playerState` and `paused` through `UdonBehaviour.GetProgramVariable(...)`.
-
-It MUST preserve the Presentation switch rule:
-
-```text
-projector open
-AND
-(VideoTXL visible OR presentationController.modeActive)
-```
-
-An old duplicate script copy under the obsolete `Assets/#Classroom/...Only_Visible_If_Blendshape_Is_Toggle/` route was deleted by Stef.
-The manager-side script remains and must not be deleted.
-
-Test before calling this fixed:
-1. normal VideoTXL playback;
-2. Video -> Presentation;
-3. slide navigation;
-4. Presentation -> Video;
-5. pause/play;
-6. projector open/close.
-
-## Persistence — planned next, not implemented
-
-Do NOT start a new session by immediately writing persistence code.
-
-Desired saved poster state:
-- URL / hasPoster;
-- position;
-- rotation;
-- scale.
-
-Current design direction:
-- keep existing live systems intact;
-- add persistence as a separate storage layer;
-- investigate/use persistent PlayerObject + `VRCEnablePersistence` for secure URL/state where appropriate;
-- keep only ONE physical poster in the scene;
-- do not turn the physical pickup into a per-player duplicate.
-
-Likely split:
-
-```text
-LIVE INSTANCE
-PosterSharedState   -> URL + hasPoster
-VRCObjectSync       -> position + rotation
-PosterScaleManager  -> scale
-
-PERSISTENCE STORAGE
-persistent PlayerObject
--> saved URL/hasPoster
--> saved position
--> saved rotation
--> saved scale
-```
-
-Persistence is user-bound unless an external backend is deliberately introduced later.
-
-## Exact next session
-
-Stef made a fresh backup before testing further.
-
-Start here:
-
-1. confirm Unity/Udon compile clean;
-2. test VideoTXL <-> Presentation switching;
-3. local poster Load -> emission ON -> Unload -> emission OFF;
-4. two-player Load/Unload + scale + movement/reset + late join where practical;
-5. record results;
-6. only then implement persistence.
+1. collect tester reports;
+2. confirm Quest VideoTXL orientation in the uploaded build;
+3. reproduce any concrete beta issue;
+4. make the smallest safe fix;
+5. regression-test Presentation/VideoTXL/e-readers/reset systems as relevant;
+6. update GitHub evidence;
+7. keep future productization parked until the beta baseline is stable.
 
 ## Working method with Stef
 
@@ -249,12 +176,11 @@ Start here:
 - noob-friendly;
 - one small manual Unity action at a time;
 - explain why before technical action;
-- inspect screenshots rather than inventing scene state;
-- complete scripts when replacement is needed;
+- inspect screenshots/logs rather than inventing scene state;
 - backup before meaningful risk;
 - no broad refactors;
 - no autonomous visual redesign;
-- Codex only for small bounded work when Stef explicitly wants it;
+- Codex only for bounded implementation/debugging when Stef explicitly wants it;
 - tested real Unity/VRChat behaviour outranks documentation.
 
-If Stef pastes only this prompt and asks no specific question, give a compact status and ask whether she wants to continue exactly where the test gate stopped or do something else.
+If Stef pastes only this prompt and asks no specific question, give a compact live-beta status and ask what tester report or beta task she wants to handle next.
