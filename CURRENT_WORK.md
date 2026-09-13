@@ -1,20 +1,22 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-12 Europe/Amsterdam
+Last updated: 2026-09-13 Europe/Amsterdam
 
 ## READ THIS FIRST
 
-Newest authoritative handoff:
+Newest active debugging handoff:
+
+`HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
+
+Release-phase authority remains:
 
 `HANDOFF_2026-09-12_BETA_LIVE.md`
 
-Then read:
+Accepted manual poster baseline:
 
 `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
 
-for the accepted manual poster baseline and detailed poster architecture.
-
-Historical recovery/poster files remain useful evidence only where they do not conflict with the live beta truth.
+Historical recovery/poster files remain useful evidence only where they do not conflict with the live beta truth or the current real Unity project.
 
 Real Unity project:
 
@@ -22,24 +24,100 @@ Real Unity project:
 
 The real uploaded/tested VRChat world remains the strongest source of truth.
 
-## CURRENT STATUS — BETA WORLD LIVE
+## CURRENT STATUS — BETA WORLD LIVE / TWO PERSISTENCE BUGS ACTIVE
 
-**Open Classroom has been uploaded successfully and the beta-test world is now running in VRChat.**
+**Open Classroom is running as a live beta-test world.**
 
-Stef has started recruiting beta testers through Facebook.
-
-The project phase is no longer recovery-first or feature-first. The default phase is now:
+The immediate next work is deliberately narrow:
 
 ```text
-real beta use
--> collect concrete bugs / confusion / UX friction
--> reproduce evidence
+Persistent Entrance Text rejoin/authority bug
+-> fix and two-user acceptance
+-> inspect current real Persistent Poster persistence implementation
+-> reproduce exact poster persistence bug
 -> smallest safe fix
--> regression test
--> update beta build
+-> persistence acceptance
 ```
 
-Do not broaden scope based only on ideas or speculative cleanup while the beta is running.
+Do not broaden this block into unrelated beta work.
+
+## PERSISTENT ENTRANCE TEXT — REPRODUCED REAL-CLIENT BUG
+
+Stef and Pieter performed a real two-user test.
+
+Observed:
+
+1. Stef opened the instance.
+2. Pieter joined and initially saw an older entrance text.
+3. Stef changed the text.
+4. Pieter rejoined and saw Stef's new text.
+5. Pieter changed the text.
+6. Stef rejoined.
+7. Stef still saw her own previously saved text instead of Pieter's current instance text.
+
+This strongly indicates a responsibility/order problem between:
+
+```text
+PlayerData
+= personal persistent data for one VRChat user
+
+[UdonSynced] entrance state
+= shared truth for the currently running instance
+```
+
+The likely bug class is that local PlayerData restoration during join/rejoin can override or republish personal content instead of preserving already-established shared instance state.
+
+Do not treat that as final diagnosis until the COMPLETE current real `EntranceTextManager.cs` is inspected.
+
+Exact next action:
+
+```text
+inspect current EntranceTextManager.cs
+-> trace OnPlayerRestored / PlayerData read / synced writes / ownership / RequestSerialization / OnDeserialization
+-> identify overwrite point
+-> smallest safe fix
+-> two-user rejoin acceptance
+```
+
+Canonical detailed route:
+
+`HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
+
+## PERSISTENT POSTER — CURRENT LOCAL IMPLEMENTATION MUST BE INSPECTED
+
+The manually rebuilt poster remains the protected accepted baseline.
+
+Reference:
+
+`HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
+
+Known accepted baseline before later persistence work:
+
+- direct image loading works;
+- current-instance URL/image synchronization works;
+- one existing top-root VRCObjectSync owns live position/rotation;
+- uniform scale baseline works;
+- rejected generated poster work from 2026-09-10/11 remains historical only.
+
+Important status boundary:
+
+The 2026-09-12 GitHub handoff still says full persistent URL/position/rotation/scale storage was not implemented yet, but Stef continued local Unity work after that point and is now reporting poster persistence problems.
+
+Therefore:
+
+```text
+current local Unity poster scripts + scene
+= authority
+
+older GitHub persistence plan
+= reference only
+```
+
+Do not rebuild from the old plan. First inspect the current complete poster script family and state the exact observed poster bug before changing code.
+
+Detailed route:
+
+`HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
 
 ## PUBLIC BETA ACCESS / CONTACT
 
@@ -68,8 +146,8 @@ Preserve unless a reproduced beta bug proves a change is necessary:
 - PlayerData reading progress;
 - Marker/reset systems;
 - local table screens;
-- persistent entrance-text architecture;
-- manual Persistent Poster baseline.
+- accepted entrance-text architecture except the reproduced restore/authority bug;
+- accepted manual Persistent Poster physical baseline.
 
 No broad refactor during beta without evidence.
 
@@ -134,24 +212,6 @@ After recovery, the world uploaded successfully.
 
 Do not describe this as a runtime memory/performance problem in Open Classroom; it was an Editor/build-pipeline blocker.
 
-## PERSISTENT POSTER — BETA BASELINE
-
-The manually rebuilt poster remains the accepted design baseline.
-
-Reference:
-
-`HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
-
-Known proven/reported before beta launch:
-
-- direct image loading works;
-- current-instance multiplayer URL/image synchronization works;
-- one existing top-root VRCObjectSync owns physical position/rotation;
-- uniform local scaling works;
-- rejected generated poster work from 2026-09-10/11 remains historical only.
-
-Do not infer that persistent URL/position/rotation/scale storage is complete merely because the beta world is live. Persistence requires its own evidence.
-
 ## BETA FEEDBACK TRIAGE
 
 Classify incoming tester feedback before changing anything:
@@ -166,34 +226,17 @@ Classify incoming tester feedback before changing anything:
 
 Beta fixes should be narrow and evidence-backed.
 
-## CURRENT BETA TEST FOCUS
-
-Useful checks include:
-
-- can a new visitor understand the world without live explanation;
-- paper tablet navigation;
-- projector/video controls;
-- ordinary VideoTXL playback;
-- Quest VideoTXL orientation;
-- VideoTXL -> Presentation -> VideoTXL switching;
-- Presentation navigation and late join;
-- e-reader usability;
-- Admin access flow;
-- Presentation upload-access flow;
-- Quest/PC readability and performance.
-
 ## EXACT NEXT PHASE
 
 ```text
-beta world live
--> recruit testers
--> gather real reports
--> confirm Quest VideoTXL orientation in uploaded build
--> fix only reproduced beta issues
--> preserve proven foundations
--> close critical regressions
--> freeze accepted beta baseline
--> later package/harden reusable products
+1. inspect current real EntranceTextManager
+2. fix PlayerData vs current-instance authority/rejoin bug
+3. two-user acceptance with Stef + Pieter or equivalent
+4. inspect current real poster persistence scripts/scene
+5. reproduce and name exact poster bug
+6. smallest safe poster fix
+7. persistence acceptance
+8. update GitHub with observed evidence only
 ```
 
 ## WORKING STYLE WITH STEF
@@ -202,7 +245,7 @@ beta world live
 - beginner-friendly;
 - one small technical action at a time;
 - explain why before technique;
-- inspect screenshots/logs instead of guessing;
+- inspect complete scripts/screenshots/logs instead of guessing;
 - backup before meaningful risk;
 - no broad refactors;
 - no autonomous visual redesign;
@@ -212,8 +255,9 @@ beta world live
 ## SOURCE OF TRUTH
 
 ```text
-real uploaded/tested beta behaviour
--> HANDOFF_2026-09-12_BETA_LIVE.md
+real current Unity/VRChat behaviour
+-> HANDOFF_2026-09-13_PERSISTENCE_BUGS.md for this active debug block
+-> HANDOFF_2026-09-12_BETA_LIVE.md for release-phase truth
 -> CURRENT_WORK.md
 -> accepted feature evidence
 -> older handoffs/recovery docs
