@@ -19,47 +19,102 @@ Real Unity project:
 Read in this order:
 
 1. `AGENTS.md`
-2. `HANDOFF_2026-09-12_BETA_LIVE.md`
+2. `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
 3. `CURRENT_WORK.md`
-4. `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` only when poster details matter
-5. older historical/recovery docs only when needed
-
-The live-beta handoff is the newest release-phase truth.
+4. `HANDOFF_2026-09-12_BETA_LIVE.md` when release-phase context matters
+5. `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` for accepted poster physical architecture
+6. older historical/recovery docs only when needed
 
 Do not ask Stef to reconstruct older recovery history when current beta evidence already answers the question.
 
-## Critical current truth — beta world live
+## Critical current truth — live beta, persistence debug block active
 
-Open Classroom has been uploaded successfully and the beta-test world is running in VRChat.
+Open Classroom is live in beta.
 
-Stef has started recruiting beta testers through Facebook.
-
-Current phase:
+The immediate work block is intentionally narrow:
 
 ```text
-real beta use
--> collect concrete reports
--> reproduce
+Persistent Entrance Text rejoin/authority bug
+-> fix and two-user acceptance
+-> inspect current real Persistent Poster persistence implementation
+-> reproduce exact poster persistence bug
 -> smallest safe fix
--> regression test
--> update beta build
+-> persistence acceptance
 ```
 
-Do not default back to feature-building or broad cleanup.
+Do not default to unrelated feature-building or broad cleanup.
 
-## Public contact / access
+## Entrance Text — reproduced real-client evidence
 
-Questions, feedback and access requests:
+Stef + Pieter observed:
 
-`info@stefanieinvr.com`
+- Pieter initially joined and saw an older entrance text;
+- Stef changed it;
+- Pieter rejoined and then saw Stef's new text;
+- Pieter changed the text;
+- Stef rejoined and still saw her own previously saved text instead of Pieter's current instance text.
 
-`stefanieinvr.com`
+This strongly suggests a responsibility/order problem between:
 
-During beta:
+```text
+PlayerData = personal persistent state per VRChat user
+[UdonSynced] entrance state = current running instance truth
+```
 
-- Classroom Admin access is manual;
-- Presentation upload access is manual;
-- help/access can be requested by contacting Stef.
+Do not assume final root cause before inspecting the COMPLETE current real `EntranceTextManager.cs`.
+
+First technical action:
+
+```text
+inspect EntranceTextManager.cs
+-> trace OnPlayerRestored
+-> PlayerData reads
+-> synced writes
+-> ownership
+-> RequestSerialization
+-> OnDeserialization
+```
+
+Goal: find where personal restored data can override an already-established current-instance shared value.
+
+Then make only the smallest safe fix and perform a controlled two-user rejoin acceptance test.
+
+## Persistent Poster — current local Unity project is authority
+
+The accepted manual physical poster baseline remains protected:
+
+- one physical top-root `Persistent_Poster`;
+- one existing `VRCObjectSync` for live position/rotation;
+- current-instance URL/image sharing architecture;
+- uniform scaling architecture;
+- no second `VRCObjectSync` for scaling;
+- rejected generated poster work from 2026-09-10/11 remains rejected.
+
+Important:
+
+The 2026-09-12 GitHub poster handoff predates Stef's later local persistence work. Stef is now reporting poster persistence problems.
+
+Therefore do NOT rebuild from the older plan.
+
+After Entrance Text is understood/fixed:
+
+```text
+inspect complete current local poster script family + wiring
+-> state exact observed poster bug in one sentence
+-> reproduce
+-> smallest safe fix
+-> persistence acceptance
+```
+
+At minimum inspect whichever current versions exist of:
+
+- `PosterSharedState.cs`;
+- `PosterImageLoaderLocal.cs`;
+- `PosterScaleManager.cs`;
+- any newly added persistence / PlayerObject / object-storage script;
+- hierarchy/Inspector wiring if relevant.
+
+Real current Unity state outranks older GitHub persistence planning.
 
 ## Protected systems
 
@@ -75,37 +130,8 @@ Do not redesign these without reproduced beta evidence:
 - PlayerData reading progress;
 - reset systems;
 - local table screens;
-- entrance-text persistence;
-- accepted manual Persistent Poster baseline.
-
-## Quest VideoTXL orientation — still needs explicit beta confirmation
-
-Immediately before beta upload:
-
-- Windows VideoTXL output was correct;
-- Quest VideoTXL output was vertically upside down;
-- Presentation on the same screen was correct;
-- hardcoding `currentInvert = true;` did not fix it;
-- investigation moved to the Quest Custom Render Texture / RenderOut path;
-- Codex identified an incorrect CRT update-material configuration as the likely root cause and prepared a narrow correction.
-
-Do not claim RESOLVED until Stef explicitly confirms the uploaded beta build on Quest.
-
-Keep VideoTXL 2.5.1 original orientation logic:
-
-```csharp
-currentInvert = !_IsQuest();
-```
-
-The hardcoded `true` version was only a diagnostic test.
-
-## Build/upload incident
-
-Before the successful beta upload, Unity build/upload was blocked by a compiler/package issue involving Memory Profiler/Burst. UdonSharp then blocked the VRChat build because Unity was not compile-clean.
-
-Memory Profiler was removed; Unity later hung and was restarted; the world then uploaded successfully.
-
-Treat this as Editor/build-pipeline history, not as proof of a Classroom runtime memory problem.
+- accepted entrance-text architecture except the reproduced restore/authority bug;
+- accepted manual poster physical baseline.
 
 ## Presentation baseline
 
@@ -120,29 +146,17 @@ Standalone Presentation Core
 -> existing physical projector/screen
 ```
 
-Previously proven/reported:
-
-- 10 slots;
-- First / Previous / Next;
-- automatic slide count;
-- real two-client synchronization;
-- cross-client control;
-- OFF/ON resumes saved slot/slide;
-- late join;
-- VideoTXL suspend/restore;
-- Presentation UI in paper tablet.
-
-Exact acceptance:
+Canonical acceptance:
 
 `PRESENTATION_ACCEPTANCE_2026-09-05.md`
 
-## Poster boundary
+Presentation is not today's work unless one of the persistence fixes causes a demonstrated regression.
 
-Use `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` for detailed accepted manual poster architecture.
+## Quest VideoTXL orientation
 
-Do not resurrect the rejected generated poster scene from 2026-09-10/11.
+The previous Quest-only VideoTXL orientation issue still requires explicit beta confirmation if it becomes relevant, but it is parked during this persistence work block unless a reproduced regression forces attention.
 
-Do not infer full persistent URL/pose/scale storage is proven merely because the beta world is live.
+Do not change VideoTXL 2.5.1 as part of entrance/poster debugging.
 
 ## Beta triage rule
 
@@ -160,15 +174,17 @@ Only the first five normally justify immediate beta work.
 
 ## Exact next work
 
-Start with real evidence, not speculative changes:
-
-1. collect tester reports;
-2. confirm Quest VideoTXL orientation in the uploaded build;
-3. reproduce any concrete beta issue;
-4. make the smallest safe fix;
-5. regression-test Presentation/VideoTXL/e-readers/reset systems as relevant;
-6. update GitHub evidence;
-7. keep future productization parked until the beta baseline is stable.
+```text
+1. get COMPLETE current EntranceTextManager.cs
+2. identify PlayerData/current-instance overwrite path
+3. smallest safe fix
+4. two-user rejoin acceptance
+5. get COMPLETE current poster persistence implementation
+6. reproduce/name exact poster bug
+7. smallest safe fix
+8. persistence acceptance
+9. update GitHub evidence
+```
 
 ## Working method with Stef
 
@@ -176,11 +192,11 @@ Start with real evidence, not speculative changes:
 - noob-friendly;
 - one small manual Unity action at a time;
 - explain why before technical action;
-- inspect screenshots/logs rather than inventing scene state;
+- inspect full current scripts/screenshots/logs rather than inventing scene state;
 - backup before meaningful risk;
 - no broad refactors;
 - no autonomous visual redesign;
 - Codex only for bounded implementation/debugging when Stef explicitly wants it;
 - tested real Unity/VRChat behaviour outranks documentation.
 
-If Stef pastes only this prompt and asks no specific question, give a compact live-beta status and ask what tester report or beta task she wants to handle next.
+If Stef pastes only this prompt and asks no specific question, orient her directly to the Entrance Text bug and ask for the complete current `EntranceTextManager.cs` as the first action.
