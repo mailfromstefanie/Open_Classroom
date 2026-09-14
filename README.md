@@ -18,39 +18,66 @@ Read in this order for current Classroom work:
 
 1. `START_PROMPT.md`
 2. `AGENTS.md`
-3. `HANDOFF_2026-09-12_BETA_LIVE.md`
-4. `CURRENT_WORK.md`
-5. feature-specific references only when needed
+3. `CURRENT_WORK.md`
+4. current feature-specific handoff/spec named there
+5. release/history references only when needed
 
 Useful durable references:
 
-- `PRESENTATION_ACCEPTANCE_2026-09-05.md` — proven Presentation acceptance;
+- `EREADER_V1_PRODUCT_SPEC_2026-09-14.md` — accepted standalone EReader V1 product/design direction and current Book_A foundation gate;
+- `EREADER_LIBRARY_HANDOFF_2026-09-05.md` — earlier working e-reader/library baseline;
+- `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md` — parked but unresolved Entrance Text / Persistent Poster persistence bugs;
+- `HANDOFF_2026-09-12_BETA_LIVE.md` — live beta/release-phase truth;
 - `HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md` — accepted manual poster baseline;
-- `EREADER_LIBRARY_HANDOFF_2026-09-05.md` — e-reader/library architecture;
+- `PRESENTATION_ACCEPTANCE_2026-09-05.md` — proven Presentation acceptance;
 - `PERFORMANCE_AUDIT_2026-09-05.md` — performance findings;
 - `WORKLOG_2026-09-08.md` — stabilization history;
 - older recovery/poster documents — historical evidence only when they do not conflict with current beta truth.
 
-## Current status — 2026-09-12
+## Current status — 2026-09-14
 
 **BETA WORLD LIVE.**
 
-The current Open Classroom build has been uploaded successfully and the beta-test world is running in VRChat.
+The current Open Classroom beta remains live.
 
-Stef has started recruiting beta testers through Facebook.
+Stef has deliberately selected a bounded EReader V1 foundation/productization block.
 
-Current development mode:
+Current first gate:
 
 ```text
-real beta use
--> collect concrete bugs / confusion / UX friction
--> reproduce
--> smallest safe fix
--> regression test
--> update beta build
+Book_A only
+-> standalone product boundary
+-> left/right ParentConstraint handles
+-> only thin handle pickup highlight
+-> preserve existing local reader behaviour
+-> prove correct first-handle / second-handle / final-drop semantics
 ```
 
-The project is no longer in the earlier controlled-recovery phase.
+The previously active Entrance Text / Persistent Poster persistence bugs are parked, not fixed. See `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md` when returning to them.
+
+## EReader V1 boundary
+
+Accepted main rule:
+
+```text
+reading / page / bookmarks / reader screen = LOCAL PER PLAYER
+```
+
+Physical movement may optionally use `VRCObjectSync`.
+Hide/Show and Reset/Home are separate physical/control responsibilities.
+Paper Tablet integration is optional input/adaptation only; the EReader is being designed as a standalone reusable prefab family.
+
+Cinema `StefanieInVR.HandheldUI` is a proven source reference for the left/right handle method. Open Classroom remains the target implementation/acceptance authority.
+
+Canonical design:
+
+`EREADER_V1_PRODUCT_SPEC_2026-09-14.md`
+
+## Future EReader converter direction
+
+A future website converter is planned for PDF/EPUB -> VR-reader media, with preview and either hosted URL or downloadable MP4/self-hosting.
+
+This is planned product direction only and does not mean the live Presentation Service has been changed.
 
 ## Public beta contact / access
 
@@ -102,9 +129,10 @@ See:
 ## Beta source-of-truth rule
 
 ```text
-real uploaded/tested VRChat beta behaviour
--> HANDOFF_2026-09-12_BETA_LIVE.md
+real current Unity/VRChat behaviour
 -> CURRENT_WORK.md
+-> current feature spec/handoff
+-> HANDOFF_2026-09-12_BETA_LIVE.md for release truth
 -> accepted feature evidence
 -> older historical/recovery docs
 ```
