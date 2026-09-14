@@ -1,140 +1,281 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-13 Europe/Amsterdam
+Last updated: 2026-09-14 Europe/Amsterdam
 
 ## READ THIS FIRST
 
-Newest active debugging handoff:
+Current active product/design route:
+
+`EREADER_V1_PRODUCT_SPEC_2026-09-14.md`
+
+Existing working e-reader baseline:
+
+`EREADER_LIBRARY_HANDOFF_2026-09-05.md`
+
+Parked unresolved persistence bugs:
 
 `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
 
-Release-phase authority remains:
+Release-phase authority:
 
 `HANDOFF_2026-09-12_BETA_LIVE.md`
-
-Accepted manual poster baseline:
-
-`HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
-
-Historical recovery/poster files remain useful evidence only where they do not conflict with the live beta truth or the current real Unity project.
 
 Real Unity project:
 
 `E:/Projects/Open_Classroom/#Unity/Open_Classroom`
 
-The real uploaded/tested VRChat world remains the strongest source of truth.
+The real current Unity/VRChat behaviour remains the strongest source of truth.
 
-## CURRENT STATUS — BETA WORLD LIVE / TWO PERSISTENCE BUGS ACTIVE
+---
 
-**Open Classroom is running as a live beta-test world.**
+## CURRENT STATUS — BETA WORLD LIVE / EREADER V1 FOUNDATION SELECTED
 
-The immediate next work is deliberately narrow:
+Open Classroom remains a live beta world.
 
-```text
-Persistent Entrance Text rejoin/authority bug
--> fix and two-user acceptance
--> inspect current real Persistent Poster persistence implementation
--> reproduce exact poster persistence bug
--> smallest safe fix
--> persistence acceptance
-```
+Stef has deliberately selected a bounded EReader productization/foundation block before returning to the unresolved Entrance Text / Persistent Poster persistence bugs.
 
-Do not broaden this block into unrelated beta work.
+Those persistence bugs are **PARKED, NOT FIXED**.
 
-## PERSISTENT ENTRANCE TEXT — REPRODUCED REAL-CLIENT BUG
-
-Stef and Pieter performed a real two-user test.
-
-Observed:
-
-1. Stef opened the instance.
-2. Pieter joined and initially saw an older entrance text.
-3. Stef changed the text.
-4. Pieter rejoined and saw Stef's new text.
-5. Pieter changed the text.
-6. Stef rejoined.
-7. Stef still saw her own previously saved text instead of Pieter's current instance text.
-
-This strongly indicates a responsibility/order problem between:
+Current active gate:
 
 ```text
-PlayerData
-= personal persistent data for one VRChat user
-
-[UdonSynced] entrance state
-= shared truth for the currently running instance
+standalone EReader product boundary
+-> Book_A only
+-> left/right ParentConstraint handles
+-> preserve existing local reader behaviour
+-> prove first-handle / second-handle / final-drop semantics
 ```
 
-The likely bug class is that local PlayerData restoration during join/rejoin can override or republish personal content instead of preserving already-established shared instance state.
+Do not broaden the first implementation task into bookmarks, Lesson Books, Book_B, website conversion or unrelated Classroom systems.
 
-Do not treat that as final diagnosis until the COMPLETE current real `EntranceTextManager.cs` is inspected.
+---
 
-Exact next action:
+## EREADER — ACCEPTED PRODUCT DIRECTION
+
+Canonical design:
+
+`EREADER_V1_PRODUCT_SPEC_2026-09-14.md`
+
+Main accepted rule:
 
 ```text
-inspect current EntranceTextManager.cs
--> trace OnPlayerRestored / PlayerData read / synced writes / ownership / RequestSerialization / OnDeserialization
--> identify overwrite point
--> smallest safe fix
--> two-user rejoin acceptance
+READING = ALWAYS LOCAL PER PLAYER
 ```
 
-Canonical detailed route:
+Local-only reader responsibilities include:
+
+- loaded/selected book;
+- book video/screen;
+- current page;
+- last-read page;
+- Keep Open / Pin;
+- bookmark data;
+- reader UI/playback state.
+
+Physical/shared responsibilities are separate and configurable where appropriate:
+
+- optional physical movement sync through `VRCObjectSync`;
+- Hide/Show policy Local or Global;
+- physical Reset/Home policy where technically valid;
+- optional shared teacher/admin Lesson Book links.
+
+Do not silently make reading/page/bookmark state global because the physical reader is networked.
+
+---
+
+## STANDALONE PREFAB BOUNDARY
+
+The new EReader must not depend on Paper Tablet scripts or Classroom-specific global control managers.
+
+The prefab should own an always-active EReader manager/controller and expose simple public functions that can later be called from:
+
+- Paper Tablet sprite/UI buttons;
+- normal Unity UI;
+- physical 3D controls/colliders;
+- a book stand;
+- another Udon behaviour.
+
+Paper Tablet integration is an adapter/input path only, not product ownership.
+
+---
+
+## LEFT / RIGHT HANDHELD FOUNDATION
+
+Problem motivating this work:
+
+Quest pickup highlighting currently lights too much of the reader surface. Stef wants only a thin left or right pickup strip to highlight, matching the successful Paper Tablet interaction pattern.
+
+Accessibility requirement:
+
+- left-hand pickup;
+- right-hand pickup;
+- optional two-hand hold;
+- only thin handle renderer/highlight per side.
+
+SOURCE PROJECT / proven reference:
+
+`mailfromstefanie/Stefanies-Art-House-Cinema`
+
+Reusable source family:
+
+`StefanieInVR.HandheldUI`
+
+Relevant source scripts:
+
+- `HandheldUIHandle.cs`;
+- `HandheldUIReset.cs` as reference where useful.
+
+TARGET PROJECT / acceptance authority:
+
+`mailfromstefanie/Open_Classroom`
+
+Cinema reference proof lowers uncertainty but does not mean the EReader implementation already exists.
+
+---
+
+## CURRENT EREADER CODE EVIDENCE
+
+Current `EReaderBook.cs` was inspected during design.
+
+Important existing behaviour:
+
+```text
+OnPickup()
+-> _isHeld = true
+-> PrepareForLocalReading()
+-> ActivateReader()
+
+OnDrop()
+-> _isHeld = false
+-> if Keep Open is false, CloseBook()
+```
+
+Therefore simply moving the `VRC Pickup` to two handles would break semantics.
+
+The two-handle implementation needs a safe input bridge / handle-count responsibility so that:
+
+```text
+first handle pickup
+-> one true reader-pickup activation
+
+second handle pickup
+-> physical two-hand behaviour only
+-> no duplicate reader reload
+
+release one of two handles
+-> still held
+-> do not close reader
+
+release final handle
+-> one true reader-drop event
+```
+
+Preserve the existing local video/page/progress behaviour.
+
+---
+
+## FIRST IMPLEMENTATION TARGET — BOOK_A ONLY
+
+Do not modify Book_B yet.
+
+Before changing the scene, Codex must inspect the complete current real pieces required for safe integration, especially:
+
+- current `EReaderBook.cs`;
+- current `EReaderLocalPlaybackManager` family if needed;
+- the reset component currently used by Book_A;
+- Book_A hierarchy and Inspector wiring;
+- current pickup/highlight setup.
+
+Then implement only the smallest foundation needed to prove Book_A left/right pickup.
+
+First acceptance gate:
+
+```text
+Book_A can be picked up from LEFT
+Book_A can be picked up from RIGHT
+only thin handle highlight appears
+first handle opens the existing local reader once
+second handle does not reload it
+releasing one of two handles keeps the reader held
+releasing final handle performs one normal reader drop
+existing local page/navigation/progress behaviour remains intact
+```
+
+Quest/real-VR acceptance remains required before calling the new physical interaction proven.
+
+---
+
+## ACCEPTED LATER EREADER V1 FEATURES — NOT FIRST GATE
+
+After the physical foundation is accepted, the product plan includes:
+
+- always-active standalone EReader manager;
+- Hide/Show for performance;
+- Local/Global visibility configuration;
+- physical Reset/Home that does not erase reading progress;
+- in-world compatible book URL input/load path;
+- personal persistent library of max **5 remembered books**;
+- persistent last-read page per remembered book;
+- max **20 persistent bookmarks per book**;
+- optional bookmark name, max **32 characters**;
+- unnamed bookmark label = `Page <number>`;
+- scrollable bookmark panel over the reader;
+- explicit Library Full message instead of automatic deletion;
+- up to **5 shared Lesson Book links** offered by an authorized teacher/admin;
+- lesson selection shared, actual reading/page/bookmarks local.
+
+Do not implement all of these in one Codex task.
+
+---
+
+## FUTURE BOOK CONVERTER — PLANNED ONLY
+
+Future website direction is recorded in the EReader V1 spec.
+
+Desired high-level workflow:
+
+```text
+Upload PDF or EPUB
+-> title / author
+-> format-appropriate layout options
+-> preview
+-> convert
+-> either StefanieInVR-hosted URL or downloadable MP4 for self-hosting
+```
+
+PDF direction: preserve original page layout.
+
+EPUB direction: later allow reflow-oriented options such as font size, margins and line spacing where technically suitable.
+
+Hosted access may later use codes/limits for maximum pages, number of hosted books, retention/storage rules and download permission.
+
+A stable Book ID / metadata concept is desired for robust personal progress/bookmark recognition.
+
+Important boundary:
+
+**This converter is PLANNED. It is not implemented and does not authorize changes to the live Presentation Service.**
+
+---
+
+## PARKED — ENTRANCE TEXT / PERSISTENT POSTER
+
+The 2026-09-13 persistence debugging block remains unresolved.
+
+Canonical handoff:
 
 `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
 
-## PERSISTENT POSTER — CURRENT LOCAL IMPLEMENTATION MUST BE INSPECTED
+Known Entrance Text real-client bug and the poster persistence investigation remain valid evidence.
 
-The manually rebuilt poster remains the protected accepted baseline.
+Do not describe either as closed.
 
-Reference:
+When Stef returns to that block, resume from the handoff rather than rebuilding from memory.
 
-`HANDOFF_2026-09-12_POSTER_WORKING_BASELINE.md`
-
-Known accepted baseline before later persistence work:
-
-- direct image loading works;
-- current-instance URL/image synchronization works;
-- one existing top-root VRCObjectSync owns live position/rotation;
-- uniform scale baseline works;
-- rejected generated poster work from 2026-09-10/11 remains historical only.
-
-Important status boundary:
-
-The 2026-09-12 GitHub handoff still says full persistent URL/position/rotation/scale storage was not implemented yet, but Stef continued local Unity work after that point and is now reporting poster persistence problems.
-
-Therefore:
-
-```text
-current local Unity poster scripts + scene
-= authority
-
-older GitHub persistence plan
-= reference only
-```
-
-Do not rebuild from the old plan. First inspect the current complete poster script family and state the exact observed poster bug before changing code.
-
-Detailed route:
-
-`HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
-
-## PUBLIC BETA ACCESS / CONTACT
-
-Questions, feedback and access requests:
-
-- `info@stefanieinvr.com`
-- `stefanieinvr.com`
-
-During beta:
-
-- Classroom Admin access is granted manually;
-- Presentation upload access is granted manually;
-- users can contact Stef for help with the Classroom or Presentation workflow.
+---
 
 ## PROTECTED WORKING FOUNDATIONS
 
-Preserve unless a reproduced beta bug proves a change is necessary:
+Preserve unless current evidence proves a necessary change:
 
 - Presentation Core/integration;
 - exact VideoTXL 2.5.1;
@@ -142,123 +283,53 @@ Preserve unless a reproduced beta bug proves a change is necessary:
 - physical projector/screen path;
 - brightness/contrast/custom screen behaviour;
 - paper tablet visual/interaction style;
-- e-reader/library baseline;
-- PlayerData reading progress;
-- Marker/reset systems;
+- existing working local e-reader video/page arbitration;
+- current PlayerData last-page progress behaviour;
+- Marker/reset systems outside the bounded EReader integration;
 - local table screens;
-- accepted entrance-text architecture except the reproduced restore/authority bug;
 - accepted manual Persistent Poster physical baseline.
 
-No broad refactor during beta without evidence.
+No broad refactor during beta.
 
-## PRESENTATION — CURRENT RELEASE TRUTH
-
-The accepted Presentation architecture remains:
-
-```text
-Standalone Presentation Core
--> own VRCUnityVideoPlayer
--> synced semantic presentation state
--> dedicated VideoTXL adapter
--> VideoTXL local suspend/restore
--> existing physical projector/screen
-```
-
-Previously proven/reported includes:
-
-- 10 slots;
-- First / Previous / Next;
-- automatic slide count;
-- real two-client synchronization;
-- cross-client slide control;
-- OFF/ON same slot/slide restore;
-- late join;
-- VideoTXL local suspend/restore;
-- final physical screen output;
-- Presentation UI integrated into the paper tablet.
-
-Canonical acceptance:
-
-`PRESENTATION_ACCEPTANCE_2026-09-05.md`
-
-## QUEST VIDEOTXL ORIENTATION — VERIFY IN LIVE BETA
-
-Immediately before the beta upload, a Quest-only VideoTXL problem was investigated:
-
-- Windows VideoTXL output was correct;
-- Quest VideoTXL output was vertically upside down;
-- Presentation was correct on the same physical screen;
-- direct `currentInvert = true;` testing did not fix the Quest result;
-- the investigation moved to the Quest Custom Render Texture / RenderOut path;
-- Codex identified an incorrect CRT update-material setup as the likely root cause and prepared a narrow correction.
-
-Do **not** call this issue fully resolved until Stef confirms the uploaded beta build is correct on Quest.
-
-VideoTXL source must remain exact 2.5.1 and its original ScreenManager orientation logic remains:
-
-```csharp
-currentInvert = !_IsQuest();
-```
-
-The temporary hardcoded `true` test was diagnostic only.
-
-## BUILD / UPLOAD INCIDENT — CLOSED ENOUGH FOR BETA, KEEP AS EVIDENCE
-
-The beta upload was initially blocked by a Unity compiler/package issue involving Memory Profiler/Burst. UdonSharp then blocked the VRChat build because Unity was not compile-clean.
-
-Memory Profiler was removed from the package manifest as the narrow recovery action. Unity later became unresponsive and had to be restarted.
-
-After recovery, the world uploaded successfully.
-
-Do not describe this as a runtime memory/performance problem in Open Classroom; it was an Editor/build-pipeline blocker.
-
-## BETA FEEDBACK TRIAGE
-
-Classify incoming tester feedback before changing anything:
-
-1. release blocker;
-2. functional bug;
-3. multiplayer/sync problem;
-4. Quest/PC platform problem;
-5. usability/confusion;
-6. visual/polish request;
-7. future feature request.
-
-Beta fixes should be narrow and evidence-backed.
+---
 
 ## EXACT NEXT PHASE
 
 ```text
-1. inspect current real EntranceTextManager
-2. fix PlayerData vs current-instance authority/rejoin bug
-3. two-user acceptance with Stef + Pieter or equivalent
-4. inspect current real poster persistence scripts/scene
-5. reproduce and name exact poster bug
-6. smallest safe poster fix
-7. persistence acceptance
-8. update GitHub with observed evidence only
+1. read EREADER_V1_PRODUCT_SPEC_2026-09-14.md
+2. inspect complete current Book_A physical/reset/pickup wiring
+3. inspect complete current EReaderBook and required local manager pieces
+4. inspect Cinema HandheldUI source family as reference
+5. design smallest Book_A left/right-handle bridge
+6. implement Book_A only
+7. compile / ClientSim smoke test
+8. VR/Quest physical highlight + handedness test
+9. record accepted evidence
+10. only then choose the next EReader V1 block
 ```
+
+---
 
 ## WORKING STYLE WITH STEF
 
 - Dutch;
 - beginner-friendly;
-- one small technical action at a time;
+- one small action at a time;
 - explain why before technique;
-- inspect complete scripts/screenshots/logs instead of guessing;
+- inspect complete current scripts/screenshots/wiring instead of guessing;
 - backup before meaningful risk;
-- no broad refactors;
-- no autonomous visual redesign;
-- Codex only for bounded implementation/debugging when Stef explicitly wants it;
-- real Unity/VRChat behaviour outranks documentation.
+- Codex is a bounded implementation worker, not product owner;
+- no broad autonomous redesign;
+- tested real Unity/VRChat behaviour outranks documentation.
 
 ## SOURCE OF TRUTH
 
 ```text
 real current Unity/VRChat behaviour
--> HANDOFF_2026-09-13_PERSISTENCE_BUGS.md for this active debug block
--> HANDOFF_2026-09-12_BETA_LIVE.md for release-phase truth
--> CURRENT_WORK.md
--> accepted feature evidence
--> older handoffs/recovery docs
+-> EREADER_V1_PRODUCT_SPEC_2026-09-14.md for accepted EReader design
+-> CURRENT_WORK.md for current gate
+-> EREADER_LIBRARY_HANDOFF_2026-09-05.md for earlier proven baseline
+-> HANDOFF_2026-09-13_PERSISTENCE_BUGS.md for parked persistence work
+-> HANDOFF_2026-09-12_BETA_LIVE.md for release truth
+-> older historical/recovery docs
 ```
