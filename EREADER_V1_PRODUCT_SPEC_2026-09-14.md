@@ -1,6 +1,11 @@
 # StefanieInVR EReader V1 Product Specification — 2026-09-14
 
-Status: **DESIGN ACCEPTED / IMPLEMENTATION NOT STARTED**
+Status: **DESIGN ACCEPTED / BOOK_A PARTLY IMPLEMENTED / FULL V1 NOT COMPLETE**
+
+Implementation note — 2026-09-16:
+[CURRENT_WORK.md](CURRENT_WORK.md) and [EREADER_BOOK_A_WORK.md](EREADER_BOOK_A_WORK.md) own current implementation/evidence. Book_A handles and custom PC/non-VR controls exist; previous VR handle baseline and latest PC route were accepted by Stef. Mobile remains unaccepted.
+
+The [2026-09-15 open/close decision](EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md) overrides this document's original final-drop/Keep Open wording as the product target. That target remains pending in current Pin-dependent VR code. Sections describing the first gate below retain the original design context; do not restart completed handle work. Native mobile Focus View is research/proposed proof only.
 
 This document records Stef's accepted product direction for the next EReader work block. It is a product/architecture specification, not runtime proof.
 
@@ -109,7 +114,7 @@ TARGET PROJECT / implementation authority:
 
 `mailfromstefanie/Open_Classroom`
 
-The Cinema HandheldUI pattern is reusable reference evidence. It does not mean the Classroom EReader implementation already exists.
+The Cinema HandheldUI pattern is reusable source evidence. Since this design was written, Book_A has its own EReader-specific implementation; see the current work handoff. Cinema proof alone never counts as target acceptance.
 
 Target conceptual hierarchy for one reader:
 
@@ -154,7 +159,9 @@ release one of two handles
 
 release final active handle
 -> one true reader-drop event
--> Keep Open decides whether local reading stays visible
+-> original design used Keep Open to decide visibility
+-> superseded product target: reader remains open (2026-09-15 decision)
+-> implementation gap: current VR code still uses legacy Pin-dependent close
 ```
 
 Current `EReaderBook.cs` uses one `_isHeld` boolean and direct `OnPickup()` / `OnDrop()` events. The two-handle implementation must therefore add a safe handle-count/bridge responsibility rather than treating every handle drop as the final book drop.
@@ -469,7 +476,7 @@ Accepted order:
 
 ---
 
-## 14. Exact next Codex gate
+## 14. Original first Codex gate — historical design scope
 
 FIRST implementation target is **Book_A only**.
 

@@ -1,6 +1,14 @@
 # EReader V1 — Open / Close Behaviour Decision — 2026-09-15
 
-Status: **ACCEPTED PRODUCT DECISION / NOT YET RUNTIME PROVEN**
+Status: **ACCEPTED PRODUCT DECISION / VR DROP RULE NOT YET IMPLEMENTED OR ACCEPTANCE-PROVEN**
+
+Implementation reconciliation — 2026-09-16:
+- The physical Book_A two-handle baseline exists and Stef reported it successful in VRChat.
+- Current local `EReaderBook.EndPhysicalHold()` still closes when Pin is off and custom focus is not open. This document's always-stay-open-on-final-drop target therefore remains an explicit implementation gap.
+- PC/mobile now have separate LEZEN and movement-only VERPLAATSEN, plus X preserving physical placement/progress and explicit TERUGZETTEN. PC is accepted; mobile is not. The first-pickup-opens description below applies to the VR handle target, not the non-VR movement grip.
+- Saved Book_A distance tuning remains 1 m / 30 s / 5 s checks; the 4 m / 15 s recommendation below has not been applied or proven.
+- Native mobile Focus View is only research/proposed proof. Its native entry/exit constraints are not a silent amendment of this product decision.
+- See [EREADER_BOOK_A_WORK.md](EREADER_BOOK_A_WORK.md). No behaviour is changed as part of this documentation reconciliation.
 
 This decision refines and overrides the earlier drop/Keep Open wording in `EREADER_V1_PRODUCT_SPEC_2026-09-14.md` for EReader open/close behaviour.
 

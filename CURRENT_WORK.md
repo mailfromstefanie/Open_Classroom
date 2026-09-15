@@ -1,57 +1,50 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-15 Europe/Amsterdam
+Last updated: 2026-09-16 Europe/Amsterdam
 
 ## READ THIS FIRST
 
-Current active product/design route:
+Current implementation and evidence:
+- [EREADER_BOOK_A_WORK.md](EREADER_BOOK_A_WORK.md) — maintained Book_A handoff; PC accepted, previous VR handle baseline accepted, mobile not accepted.
+- [EREADER_MOBILE_FOCUS_VIEW_RESEARCH_2026-09-16.md](EREADER_MOBILE_FOCUS_VIEW_RESEARCH_2026-09-16.md) — research only; native mobile prototype not built or authorized yet.
 
-`EREADER_V1_PRODUCT_SPEC_2026-09-14.md`
+Accepted product design:
+- [EREADER_V1_PRODUCT_SPEC_2026-09-14.md](EREADER_V1_PRODUCT_SPEC_2026-09-14.md).
+- [EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md](EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md) — final-drop-stays-open remains a product requirement, not completed implementation evidence.
 
-Accepted open/close refinement that overrides the older drop/Keep Open wording in that spec:
+Historical baseline: `EREADER_LIBRARY_HANDOFF_2026-09-05.md`.
+Parked persistence: `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`.
+Release authority: `HANDOFF_2026-09-12_BETA_LIVE.md`.
 
-`EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md`
-
-Existing working e-reader baseline:
-
-`EREADER_LIBRARY_HANDOFF_2026-09-05.md`
-
-Parked unresolved persistence bugs:
-
-`HANDOFF_2026-09-13_PERSISTENCE_BUGS.md`
-
-Release-phase authority:
-
-`HANDOFF_2026-09-12_BETA_LIVE.md`
-
-Real Unity project:
-
-`E:/Projects/Open_Classroom/#Unity/Open_Classroom`
-
-The real current Unity/VRChat behaviour remains the strongest source of truth.
+Real Unity project: `E:/Projects/Open_Classroom/#Unity/Open_Classroom`.
+The real current Unity/VRChat behaviour remains the strongest implementation evidence.
+This repository update synchronizes documentation, not the Unity scene/assets or a new world release.
 
 ---
 
-## CURRENT STATUS — BETA WORLD LIVE / EREADER V1 FOUNDATION SELECTED
+## CURRENT STATUS — BOOK_A PC ACCEPTED / VR BASELINE PRESERVED / MOBILE OPEN
 
-Open Classroom remains a live beta world.
+Open Classroom remains a live beta world. No new public release is claimed by this documentation update.
 
-Stef has deliberately selected a bounded EReader productization/foundation block before returning to the unresolved Entrance Text / Persistent Poster persistence bugs.
+The bounded Book_A implementation has been built and saved locally:
+- two separate VR ParentConstraint handles and EReader-specific controller;
+- separate non-VR LEZEN, movement-only VERPLAATSEN grip and TERUGZETTEN;
+- local custom WorldSpace reading view with zoom/pan;
+- X closes custom focus while preserving physical placement and reading progress;
+- 212 Udon scripts compiled successfully; this is separate from runtime acceptance.
 
-Those persistence bugs are **PARKED, NOT FIXED**.
+Evidence reported by Stef:
+- previous two-handle VRChat implementation: passed;
+- PC after separate reading/movement implementation: good;
+- mobile: partly functional, but swiping also moves the avatar, layout wastes page space and pinch is absent;
+- no new post-change VR/Quest/multiplayer acceptance is inferred.
 
-Current active gate:
+Current next gate: propose a small isolated native mobile Focus View proof with a static page and counter button. Await a separate implementation GO, then Stef tests it on her phone. Research is complete for choosing that experiment, not proof of native pinch/HUD/exit behaviour.
 
-```text
-standalone EReader product boundary
--> Book_A only
--> left/right ParentConstraint handles
--> preserve existing local reader behaviour
--> separate physical drop from reader close
--> prove first-handle / second-handle / final-drop-stays-open semantics
-```
+**Implementation/design gap:** current `EndPhysicalHold()` can still close the VR reader when Pin is off. The accepted final-drop-stays-open product decision is not implemented merely because handles passed. Keep that requirement open; do not silently change the proven VR path during mobile work.
 
-Do not broaden the first implementation task into bookmarks, Lesson Books, Book_B, website conversion or unrelated Classroom systems.
+Entrance Text / Persistent Poster persistence bugs remain **PARKED, NOT FIXED**.
+Book_B, bookmarks/library, converter, networking and unrelated systems stay outside this block.
 
 ---
 
@@ -95,9 +88,9 @@ Do not silently make reading/page/bookmark/open-close state global because the p
 
 ---
 
-## ACCEPTED OPEN / CLOSE EXPERIENCE — 2026-09-15
+## ACCEPTED OPEN / CLOSE EXPERIENCE — PRODUCT TARGET, NOT FULLY IMPLEMENTED
 
-Dropping the reader is no longer treated as "finished reading".
+The accepted V1 design says dropping the reader is not "finished reading". The current VR implementation still has the legacy Pin-dependent final-drop close; this section describes the remaining product target, not a runtime PASS.
 
 Accepted behaviour:
 
@@ -178,91 +171,44 @@ TARGET PROJECT / acceptance authority:
 
 `mailfromstefanie/Open_Classroom`
 
-Cinema reference proof lowers uncertainty but does not mean the EReader implementation already exists.
+Cinema was inspected read-only as the source reference. The Book_A integration now exists and Stef reported the two-handle VRChat baseline successful. Current implementation uses EReaderHandle/EReaderPhysicalController, not a runtime dependency on Cinema scripts. Preserve it; see EREADER_BOOK_A_WORK.md for evidence limits.
 
 ---
 
-## CURRENT EREADER CODE EVIDENCE
+## CURRENT EREADER CODE EVIDENCE — 2026-09-16
 
-Current `EReaderBook.cs` was inspected during design.
+Local source inspection confirms:
+- `EReaderPhysicalController` handles first/second/final physical hold transitions and two constraint sources.
+- `EReaderBook.BeginPhysicalHold()` activates on VR first hold; Book_A non-VR movement is excluded.
+- `EndPhysicalHold()` clears hold and calls `CloseBook` if Pin is off and custom focus is not open. Final-drop-stays-open is therefore still pending for VR.
+- `OpenReader()` explicitly prepares and activates non-VR reading.
+- `EReaderMoveHandle` moves/releases without activating playback or writing progress.
+- custom focus release/exit uses cleanup at the current pose; only explicit reset goes Home.
+- distance-close exists, but active hold/custom focus counts as nearby.
 
-Important existing behaviour:
+Saved Book_A scene tuning is 1 metre / 30 seconds / 5-second checks; generic script defaults are 3 metres / 60 seconds. The product decision's 4 metres / 15 seconds is a proposed future tuning target, not the current Book_A wiring or accepted runtime proof.
 
-```text
-OnPickup()
--> _isHeld = true
--> PrepareForLocalReading()
--> ActivateReader()
-
-OnDrop()
--> _isHeld = false
--> if Keep Open is false, CloseBook()
-```
-
-That is existing-code evidence, **not the accepted final V1 open/close behaviour**.
-
-The 2026-09-15 product decision now requires physical hold/drop state to be separated from reader open/close state.
-
-Therefore simply moving the `VRC Pickup` to two handles would break semantics, and preserving the old direct `OnDrop() -> CloseBook()` path would also produce the wrong product behaviour.
-
-The two-handle implementation needs a safe input bridge / handle-count responsibility so that:
-
-```text
-first handle pickup
--> one true reader-pickup activation
-
-second handle pickup
--> physical two-hand behaviour only
--> no duplicate reader reload
-
-release one of two handles
--> still held
--> do not close reader
-
-release final handle
--> physical hold ends once
--> reader remains open
-```
-
-Explicit Close / X and sustained distance-close become separate local close requests owned by reader/controller logic.
-
-Preserve the existing local video/page/progress behaviour.
+Current scripts/scene remain in the local Unity project. Existing repository script material is reference evidence and was not synchronized in this documentation-only update.
 
 ---
 
-## FIRST IMPLEMENTATION TARGET — BOOK_A ONLY
+## CURRENT BOUNDED TARGET — MOBILE PROOF, BOOK_A ONLY
 
-Do not modify Book_B yet.
+Preserve the accepted PC path and previous VR handle baseline. Book_B is not converted.
 
-Before changing the scene, inspect the complete current real pieces required for safe integration, especially:
+Proposed M0 test:
+- one separate stationary WorldSpace canvas with UIShape and native Focus View allowed;
+- centered pivot, static test image, one counter button;
+- no page-wide ScrollRect and no camera-follow loop;
+- native user entry/exit; no canvas-disable shortcut to force exit.
 
-- current `EReaderBook.cs`;
-- current `EReaderLocalPlaybackManager` family if needed;
-- the reset component currently used by Book_A;
-- Book_A hierarchy and Inspector wiring;
-- current pickup/highlight setup;
-- current Close / X wiring;
-- current Keep Open / Pin use before changing its role.
+Stef tests actual entry, HUD occupancy, avatar movement, pan, zoom gesture, button interaction, portrait/landscape and exit. No autonomous Play Mode or platform switching.
 
-Then implement only the smallest foundation needed to prove Book_A left/right pickup and the new drop-stays-open rule.
+Two integration issues remain for later:
+1. `CameraMode == FocusView` does not identify which canvas is focused.
+2. Existing Book_A activation opens the custom camera-follow panel; isolate the first native proof before connecting shared RT/playback.
 
-First acceptance gate:
-
-```text
-Book_A can be picked up from LEFT
-Book_A can be picked up from RIGHT
-only thin handle highlight appears
-first handle opens the existing local reader once
-second handle does not reload it
-releasing one of two handles keeps the reader held/open
-releasing final handle leaves the reader open
-explicit Close / X closes the local reader
-existing local page/navigation/progress behaviour remains intact
-```
-
-Quest/real-VR acceptance remains required before calling the new physical interaction proven.
-
-Distance-close can be implemented in the same open/close manager block or immediately after the handle foundation, but must be proven before standalone V1 open/close behaviour is considered complete.
+M0 is proposed, **not implemented and not yet authorized**. The GitHub documentation GO does not authorize it. The older first-handle build checklist is history, not an instruction to rebuild working handles.
 
 ---
 
@@ -357,19 +303,14 @@ No broad refactor during beta.
 
 ## EXACT NEXT PHASE
 
-```text
-1. read EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md
-2. read EREADER_V1_PRODUCT_SPEC_2026-09-14.md for the wider product design
-3. inspect complete current Book_A physical/reset/pickup/Close wiring
-4. inspect complete current EReaderBook and required local manager pieces
-5. inspect Cinema HandheldUI source family as reference
-6. design smallest Book_A left/right-handle bridge with physical drop separated from reader close
-7. implement Book_A only
-8. compile / ClientSim smoke test
-9. VR/Quest physical highlight + handedness + drop-stays-open test
-10. record accepted evidence
-11. only then choose the next EReader V1 block
-```
+1. Read this file and `EREADER_BOOK_A_WORK.md`.
+2. Read `EREADER_MOBILE_FOCUS_VIEW_RESEARCH_2026-09-16.md`.
+3. On a future prototype GO, inspect only the relevant current Book_A wiring and installed SDK APIs.
+4. Build the isolated M0 test, compile and save.
+5. Stef tests on her actual phone; record observations, not inferred passes.
+6. Only after that evidence choose a full mobile integration and its entry/exit UX.
+
+No mobile native prototype is built yet. The accepted wider open/close decision remains an explicit pending gap; it is not silently cancelled or implemented during documentation synchronization.
 
 ---
 
@@ -380,7 +321,8 @@ No broad refactor during beta.
 - one small action at a time;
 - explain why before technique;
 - inspect complete current scripts/screenshots/wiring instead of guessing;
-- backup before meaningful risk;
+- Stef already has backups; do not create another without a concrete reason discussed with her;
+- Stef performs runtime tests; code compilation is separate evidence;
 - Codex is a bounded implementation worker, not product owner;
 - no broad autonomous redesign;
 - tested real Unity/VRChat behaviour outranks documentation.
@@ -389,7 +331,8 @@ No broad refactor during beta.
 
 ```text
 real current Unity/VRChat behaviour
--> EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md for accepted open/close semantics
+-> EREADER_BOOK_A_WORK.md for current implementation and reported test evidence
+-> EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md for accepted target open/close semantics
 -> EREADER_V1_PRODUCT_SPEC_2026-09-14.md for wider accepted EReader design
 -> CURRENT_WORK.md for current gate
 -> EREADER_LIBRARY_HANDOFF_2026-09-05.md for earlier proven baseline

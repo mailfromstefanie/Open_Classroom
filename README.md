@@ -24,7 +24,10 @@ Read in this order for current Classroom work:
 
 Useful durable references:
 
-- `EREADER_V1_PRODUCT_SPEC_2026-09-14.md` — accepted standalone EReader V1 product/design direction and current Book_A foundation gate;
+- [EREADER_BOOK_A_WORK.md](EREADER_BOOK_A_WORK.md) — current Book_A implementation, evidence and next mobile gate;
+- [EREADER_MOBILE_FOCUS_VIEW_RESEARCH_2026-09-16.md](EREADER_MOBILE_FOCUS_VIEW_RESEARCH_2026-09-16.md) — native mobile research, not implementation;
+- `EREADER_V1_PRODUCT_SPEC_2026-09-14.md` — wider accepted product design;
+- `EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md` — accepted target behaviour, including the still-open VR final-drop gap;
 - `EREADER_LIBRARY_HANDOFF_2026-09-05.md` — earlier working e-reader/library baseline;
 - `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md` — parked but unresolved Entrance Text / Persistent Poster persistence bugs;
 - `HANDOFF_2026-09-12_BETA_LIVE.md` — live beta/release-phase truth;
@@ -34,7 +37,7 @@ Useful durable references:
 - `WORKLOG_2026-09-08.md` — stabilization history;
 - older recovery/poster documents — historical evidence only when they do not conflict with current beta truth.
 
-## Current status — 2026-09-14
+## Current status — 2026-09-16
 
 **BETA WORLD LIVE.**
 
@@ -42,16 +45,11 @@ The current Open Classroom beta remains live.
 
 Stef has deliberately selected a bounded EReader V1 foundation/productization block.
 
-Current first gate:
+Book_A is implemented locally and compile checked. Stef reports PC good and previously accepted the VR two-handle baseline. Mobile is not accepted: swiping also moves the avatar, layout wastes page space and pinch is absent.
 
-```text
-Book_A only
--> standalone product boundary
--> left/right ParentConstraint handles
--> only thin handle pickup highlight
--> preserve existing local reader behaviour
--> prove correct first-handle / second-handle / final-drop semantics
-```
+Next proposed gate: a small isolated native mobile Focus View proof, not yet built or authorized. See the work handoff for scope. The accepted V1 final-drop-stays-open rule is not yet implemented in the current Pin-dependent VR drop path.
+
+This is a documentation synchronization, not a Unity project backup, source-code synchronization or new public world release.
 
 The previously active Entrance Text / Persistent Poster persistence bugs are parked, not fixed. See `HANDOFF_2026-09-13_PERSISTENCE_BUGS.md` when returning to them.
 
