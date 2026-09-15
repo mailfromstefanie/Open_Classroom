@@ -22,6 +22,24 @@ This repository update synchronizes documentation, not the Unity scene/assets or
 
 ---
 
+## COMMERCIAL V1 RESEARCH — COMPLETED, NOT IMPLEMENTED
+
+The cross-project commercial feasibility, architecture, privacy, licensing, packaging, sales and release-gate research is complete:
+[full Project Hub report](https://github.com/mailfromstefanie/StefanieInVR-Project-Hub/blob/main/RESEARCH/EREADER_CONVERTER_COMMERCIAL_V1_RESEARCH_2026-09-16.md).
+
+Decision relevant to Open Classroom:
+- commercial V1 is a standalone paid EReader prefab plus PDF-only companion converter;
+- target package is a namespaced UnityPackage, with VRChat Worlds/UdonSharp installed separately through Creator Companion;
+- Desktop and only explicitly proven VR platforms may be advertised;
+- mobile phone remains unsupported/experimental until real Android and iOS Focus View acceptance passes;
+- the current final-drop-stays-open implementation gap remains a paid-release blocker;
+- Book_B, EPUB, bookmarks/library, accounts, subscriptions, permanent hosting and advanced networking are cut from V1;
+- clean-project import, drag-prefab/configure/build and upgrade-with-overrides tests must pass before first sale.
+
+This records decisions only. It does not authorize or claim Unity/Udon implementation, packaging, testing or a new world upload.
+
+---
+
 ## CURRENT STATUS — BOOK_A PC ACCEPTED / VR BASELINE PRESERVED / MOBILE OPEN
 
 Open Classroom remains a live beta world. No new public release is claimed by this documentation update.
