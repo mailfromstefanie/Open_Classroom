@@ -1,12 +1,16 @@
 # Current Work — Open Classroom
 
-Last updated: 2026-09-14 Europe/Amsterdam
+Last updated: 2026-09-15 Europe/Amsterdam
 
 ## READ THIS FIRST
 
 Current active product/design route:
 
 `EREADER_V1_PRODUCT_SPEC_2026-09-14.md`
+
+Accepted open/close refinement that overrides the older drop/Keep Open wording in that spec:
+
+`EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md`
 
 Existing working e-reader baseline:
 
@@ -43,7 +47,8 @@ standalone EReader product boundary
 -> Book_A only
 -> left/right ParentConstraint handles
 -> preserve existing local reader behaviour
--> prove first-handle / second-handle / final-drop semantics
+-> separate physical drop from reader close
+-> prove first-handle / second-handle / final-drop-stays-open semantics
 ```
 
 Do not broaden the first implementation task into bookmarks, Lesson Books, Book_B, website conversion or unrelated Classroom systems.
@@ -52,9 +57,13 @@ Do not broaden the first implementation task into bookmarks, Lesson Books, Book_
 
 ## EREADER — ACCEPTED PRODUCT DIRECTION
 
-Canonical design:
+Canonical base design:
 
 `EREADER_V1_PRODUCT_SPEC_2026-09-14.md`
+
+Open/close behaviour override:
+
+`EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md`
 
 Main accepted rule:
 
@@ -68,9 +77,12 @@ Local-only reader responsibilities include:
 - book video/screen;
 - current page;
 - last-read page;
-- Keep Open / Pin;
 - bookmark data;
-- reader UI/playback state.
+- reader UI/playback state;
+- open/close state;
+- distance-close timer/state.
+
+The existing Keep Open / Pin feature is legacy current behaviour. Its old meaning as the thing that decides whether a normal drop closes the reader is superseded for V1. Do not delete or repurpose it blindly before inspecting its current real use.
 
 Physical/shared responsibilities are separate and configurable where appropriate:
 
@@ -79,7 +91,42 @@ Physical/shared responsibilities are separate and configurable where appropriate
 - physical Reset/Home policy where technically valid;
 - optional shared teacher/admin Lesson Book links.
 
-Do not silently make reading/page/bookmark state global because the physical reader is networked.
+Do not silently make reading/page/bookmark/open-close state global because the physical reader is networked.
+
+---
+
+## ACCEPTED OPEN / CLOSE EXPERIENCE — 2026-09-15
+
+Dropping the reader is no longer treated as "finished reading".
+
+Accepted behaviour:
+
+```text
+release final active handle
+-> physical hold ends
+-> reader remains open
+-> local reading state remains intact
+```
+
+The local reader closes only when:
+
+1. the user explicitly presses Close / X; or
+2. the user remains sufficiently far away for a grace period.
+
+Distance-close must use a grace timer so briefly crossing the threshold does not instantly close the reader.
+
+Starting tuning recommendation for testing:
+
+```text
+about 4 metres away
+-> start timer
+-> about 15 seconds still out of range
+-> close local reader
+```
+
+Those exact values are starting defaults, not yet runtime-proven constants.
+
+This behaviour is local per player.
 
 ---
 
@@ -96,6 +143,8 @@ The prefab should own an always-active EReader manager/controller and expose sim
 - another Udon behaviour.
 
 Paper Tablet integration is an adapter/input path only, not product ownership.
+
+The manager/controller owns reader open/close truth. Handles only request/represent physical hold state.
 
 ---
 
@@ -150,7 +199,11 @@ OnDrop()
 -> if Keep Open is false, CloseBook()
 ```
 
-Therefore simply moving the `VRC Pickup` to two handles would break semantics.
+That is existing-code evidence, **not the accepted final V1 open/close behaviour**.
+
+The 2026-09-15 product decision now requires physical hold/drop state to be separated from reader open/close state.
+
+Therefore simply moving the `VRC Pickup` to two handles would break semantics, and preserving the old direct `OnDrop() -> CloseBook()` path would also produce the wrong product behaviour.
 
 The two-handle implementation needs a safe input bridge / handle-count responsibility so that:
 
@@ -167,8 +220,11 @@ release one of two handles
 -> do not close reader
 
 release final handle
--> one true reader-drop event
+-> physical hold ends once
+-> reader remains open
 ```
+
+Explicit Close / X and sustained distance-close become separate local close requests owned by reader/controller logic.
 
 Preserve the existing local video/page/progress behaviour.
 
@@ -178,15 +234,17 @@ Preserve the existing local video/page/progress behaviour.
 
 Do not modify Book_B yet.
 
-Before changing the scene, Codex must inspect the complete current real pieces required for safe integration, especially:
+Before changing the scene, inspect the complete current real pieces required for safe integration, especially:
 
 - current `EReaderBook.cs`;
 - current `EReaderLocalPlaybackManager` family if needed;
 - the reset component currently used by Book_A;
 - Book_A hierarchy and Inspector wiring;
-- current pickup/highlight setup.
+- current pickup/highlight setup;
+- current Close / X wiring;
+- current Keep Open / Pin use before changing its role.
 
-Then implement only the smallest foundation needed to prove Book_A left/right pickup.
+Then implement only the smallest foundation needed to prove Book_A left/right pickup and the new drop-stays-open rule.
 
 First acceptance gate:
 
@@ -196,12 +254,15 @@ Book_A can be picked up from RIGHT
 only thin handle highlight appears
 first handle opens the existing local reader once
 second handle does not reload it
-releasing one of two handles keeps the reader held
-releasing final handle performs one normal reader drop
+releasing one of two handles keeps the reader held/open
+releasing final handle leaves the reader open
+explicit Close / X closes the local reader
 existing local page/navigation/progress behaviour remains intact
 ```
 
 Quest/real-VR acceptance remains required before calling the new physical interaction proven.
+
+Distance-close can be implemented in the same open/close manager block or immediately after the handle foundation, but must be proven before standalone V1 open/close behaviour is considered complete.
 
 ---
 
@@ -210,6 +271,7 @@ Quest/real-VR acceptance remains required before calling the new physical intera
 After the physical foundation is accepted, the product plan includes:
 
 - always-active standalone EReader manager;
+- sustained-distance automatic local close with tunable threshold/grace period;
 - Hide/Show for performance;
 - Local/Global visibility configuration;
 - physical Reset/Home that does not erase reading progress;
@@ -296,16 +358,17 @@ No broad refactor during beta.
 ## EXACT NEXT PHASE
 
 ```text
-1. read EREADER_V1_PRODUCT_SPEC_2026-09-14.md
-2. inspect complete current Book_A physical/reset/pickup wiring
-3. inspect complete current EReaderBook and required local manager pieces
-4. inspect Cinema HandheldUI source family as reference
-5. design smallest Book_A left/right-handle bridge
-6. implement Book_A only
-7. compile / ClientSim smoke test
-8. VR/Quest physical highlight + handedness test
-9. record accepted evidence
-10. only then choose the next EReader V1 block
+1. read EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md
+2. read EREADER_V1_PRODUCT_SPEC_2026-09-14.md for the wider product design
+3. inspect complete current Book_A physical/reset/pickup/Close wiring
+4. inspect complete current EReaderBook and required local manager pieces
+5. inspect Cinema HandheldUI source family as reference
+6. design smallest Book_A left/right-handle bridge with physical drop separated from reader close
+7. implement Book_A only
+8. compile / ClientSim smoke test
+9. VR/Quest physical highlight + handedness + drop-stays-open test
+10. record accepted evidence
+11. only then choose the next EReader V1 block
 ```
 
 ---
@@ -326,7 +389,8 @@ No broad refactor during beta.
 
 ```text
 real current Unity/VRChat behaviour
--> EREADER_V1_PRODUCT_SPEC_2026-09-14.md for accepted EReader design
+-> EREADER_V1_OPEN_CLOSE_DECISION_2026-09-15.md for accepted open/close semantics
+-> EREADER_V1_PRODUCT_SPEC_2026-09-14.md for wider accepted EReader design
 -> CURRENT_WORK.md for current gate
 -> EREADER_LIBRARY_HANDOFF_2026-09-05.md for earlier proven baseline
 -> HANDOFF_2026-09-13_PERSISTENCE_BUGS.md for parked persistence work
